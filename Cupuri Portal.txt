@@ -1,0 +1,40 @@
+Cupuri Portal:
+
+This is the payload:
+
+{name: "Prince Cuthbert", email: "prince@gmail.com", role: "admin", password: "Cuthbert@123"}
+email
+: 
+"prince@gmail.com"
+name
+: 
+"Prince Cuthbert"
+password
+: 
+"Cuthbert@123"
+role
+: 
+"admin"
+
+
+This is it's preview:
+
+{message: "Access denied for user 'root'@'localhost' (using password: NO)"}
+message
+: 
+"Access denied for user 'root'@'localhost' (using password: NO)"
+
+This is the Header info:
+
+Request URL
+http://localhost:3009/api/auth/register
+Request Method
+POST
+Status Code
+500 Internal Server Error
+Remote Address
+[::1]:3009
+Referrer Policy
+strict-origin-when-cross-origin
+
+After the signup submittion
