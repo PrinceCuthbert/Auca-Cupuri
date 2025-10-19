@@ -1,0 +1,294 @@
+/* header.css */
+
+.header {
+  background: rgba(255 255 255 / 0.8);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 15px -3px rgb(16 185 129 / 0.1),
+    0 4px 6px -2px rgb(16 185 129 / 0.05);
+  border-bottom: 1px solid #d1fae5; /* emerald-100 */
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.header-container {
+  max-width: 1120px; /* approx max-w-7xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 4rem; /* h-16 */
+}
+
+/* Logo group */
+.logo-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* space-x-3 */
+  text-decoration: none;
+}
+
+.logo-icon {
+  background: linear-gradient(
+    135deg,
+    #16a34a,
+    #14b8a6
+  ); /* emerald-600 to teal-600 */
+  padding: 0.5rem;
+  border-radius: 0.75rem; /* rounded-xl */
+  display: flex;
+  transition: transform 0.3s ease;
+  color: white;
+}
+
+.logo-group:hover .logo-icon {
+  transform: scale(1.1);
+}
+
+.icon-white {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: white;
+}
+
+.logo-texts {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  user-select: none;
+}
+
+.logo-title {
+  font-size: 1.25rem; /* text-xl */
+  font-weight: 700;
+  background: linear-gradient(to right, #16a34a, #14b8a6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+  margin: 0;
+}
+
+.logo-subtitle {
+  font-size: 0.75rem; /* text-xs */
+  color: #6b7280; /* gray-500 */
+  margin: 0;
+}
+
+/* Navigation */
+.main-nav {
+  display: flex;
+  gap: 0.25rem; /* space-x-1 */
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* space-x-2 */
+  padding: 0.5rem 1rem; /* px-4 py-2 */
+  border-radius: 0.5rem; /* rounded-lg */
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500;
+  color: #4b5563; /* gray-600 */
+  text-decoration: none;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.nav-link:hover {
+  color: #16a34a; /* emerald-600 */
+  background-color: #dcfce7; /* emerald-50 */
+  box-shadow: none;
+}
+
+.nav-link.active {
+  background-color: #d1fae5; /* emerald-100 */
+  color: #166534; /* emerald-700 */
+  box-shadow: 0 4px 6px rgb(16 185 129 / 0.3);
+}
+
+.nav-icon {
+  width: 1rem; /* h-4 */
+  height: 1rem; /* w-4 */
+  color: inherit;
+  user-select: none;
+}
+
+/* User menu */
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* space-x-3 */
+}
+
+.user-name-role {
+  text-align: right;
+}
+
+.user-name {
+  margin: 0;
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 600;
+  color: #111827; /* gray-900 */
+  user-select: none;
+}
+
+.user-role {
+  margin: 0;
+  font-size: 0.75rem; /* text-xs */
+  font-weight: 600;
+  color: #16a34a; /* emerald-600 */
+  text-transform: capitalize;
+  user-select: none;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #dc2626; /* red-600 */
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.logout-btn:hover {
+  color: #b91c1c; /* red-700 */
+  background-color: #fee2e2; /* red-50 */
+}
+
+.logout-btn .nav-icon {
+  color: #dc2626;
+}
+
+/* Auth links */
+.auth-links {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.login-link {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4b5563; /* gray-700 */
+  text-decoration: none;
+  transition: color 0.3s ease;
+  user-select: none;
+}
+
+.login-link:hover {
+  color: #16a34a; /* emerald-600 */
+}
+
+.signup-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  background: linear-gradient(90deg, #16a34a, #14b8a6);
+  border-radius: 0.5rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 15px -3px rgb(16 185 129 / 0.7);
+  user-select: none;
+}
+
+.signup-btn:hover {
+  background: linear-gradient(90deg, #15803d, #0f766e);
+  box-shadow: 0 10px 15px -3px rgb(5 150 105 / 0.9);
+  transform: translateY(-2px);
+}
+
+/* ===================
+   Responsive Styles
+   =================== */
+
+/* Tablet and below */
+@media (max-width: 768px) {
+  .header-container {
+    flex-wrap: wrap;
+    height: auto;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    gap: 0.75rem;
+  }
+
+  .main-nav {
+    order: 3; /* move nav below logo & user menu */
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .user-menu,
+  .auth-links {
+    order: 2;
+  }
+
+  .logo-group {
+    order: 1;
+  }
+}
+
+/* Small screens (phones) */
+@media (max-width: 480px) {
+  /* Hide logo subtitle on very small screens */
+  .logo-subtitle {
+    display: none;
+  }
+
+  /* Shrink nav links */
+  .nav-link {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  /* Shrink buttons */
+  .signup-btn,
+  .logout-btn {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  /* Hide Logout text, keep only the icon */
+  .logout-btn {
+    gap: 0; /* remove spacing */
+    justify-content: center;
+  }
+
+  .logout-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .logout-btn::after {
+    content: none; /* remove "Logout" text */
+  }
+
+  /* Force text inside logout-btn to be hidden */
+  .logout-btn span,
+  .logout-btn p,
+  .logout-btn text,
+  .logout-btn {
+    font-size: 0;
+  }
+}

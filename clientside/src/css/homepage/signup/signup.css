@@ -1,0 +1,104 @@
+/* Layout Container */
+.login-card {
+  max-width: 400px;
+  margin: auto;
+  background-color: #ffffff;
+  border: 1px solid #e0f2f1;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 16px rgba(16, 185, 129, 0.1);
+}
+
+/* Title & Link Styling */
+.login-title-section h2 {
+  margin-top: 16px;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.signup {
+  text-align: center;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.signup-link {
+  color: #10b981;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.signup-link:hover {
+  text-decoration: underline;
+}
+
+/* Form Group */
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Inputs and Selects */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  background-color: #fff;
+}
+
+input:focus,
+select:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  outline: none;
+}
+
+/* Password Field with Icon */
+.input-with-icon {
+  position: relative;
+}
+
+.input-with-icon input {
+  padding-right: 40px;
+}
+
+.input-with-icon span {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #6b7280;
+}
+
+/* Submit Button */
+.submit-button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(to right, #10b981, #059669);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.submit-button:hover {
+  background: linear-gradient(to right, #0f766e, #047857);
+}

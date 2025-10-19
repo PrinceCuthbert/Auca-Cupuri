@@ -1,0 +1,12 @@
+{
+  "exams": [
+    {
+      "id": 1,
+      "title": "Applied Mathematics Final 2023",
+      "faculty": "Software Engineering",
+      "course": "Applied Mathematics",
+      "examType": "Final",
+      "file": "applied-math-final-2023.pdf"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "exams": [
+    {
+      "id": "1",
+      "title": "Applied Mathematics Final 2023",
+      "faculty": "Software Engineering",
+      "course": "Applied Mathematics",
+      "examType": "Final",
+      "file": "applied-math-final-2023.pdf"
+    },
+    {
+      "id": "3d9e",
+      "name": "Software Engineering Final 2023",
+      "faculty": "Software Engineering",
+      "course": "Software Engineering",
+      "examType": "Final"
+    }
+  ]
+},
+{
+  "user":[
+     {
+    "_id": "admin1",
+    "name": "Admin User",
+    "email": "admin@auca.ac.rw",
+    "role": "admin",
+    "createdAt": "2023-01-01T00:00:00Z",
+  },
+  {
+    "_id": "student1",
+    "name": "Student User",
+    "email": "student@auca.ac.rw",
+    "role": "student",
+    "createdAt": "2023-01-15T00:00:00Z",
+  },
+
+  ]
+}
