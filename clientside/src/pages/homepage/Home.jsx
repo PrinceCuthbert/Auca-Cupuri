@@ -1,7 +1,7 @@
 import React from "react";
 import "../../css/homepage/header.css";
 import "../../css/footer.css";
-import "../../css/homepage/WelcomeBanner.css";
+import "../../css/homepage/welcomeBanner.css";
 import "../../css/homepage/aboutSection.css";
 
 import { Link } from "react-router-dom";

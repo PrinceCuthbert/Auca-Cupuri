@@ -33,6 +33,12 @@ export const AppProvider = ({ children }) => {
           return;
         }
 
+        console.log(
+          "🔐 Auth token found:",
+          user.token.substring(0, 20) + "..."
+        );
+        console.log("📍 Fetching from:", BASE_URL);
+
         const [facRes, courseRes, examRes] = await Promise.all([
           fetch(`${BASE_URL}/faculties`, {
             headers: { ...getAuthHeaders() },
@@ -45,7 +51,15 @@ export const AppProvider = ({ children }) => {
           }),
         ]);
 
+        console.log("📡 API Responses:", {
+          faculties: { status: facRes.status, ok: facRes.ok },
+          courses: { status: courseRes.status, ok: courseRes.ok },
+          exams: { status: examRes.status, ok: examRes.ok },
+        });
+
         if (!facRes.ok || !courseRes.ok || !examRes.ok) {
+          const examErr = await examRes.text();
+          console.error("Exam API error response:", examErr);
           throw new Error("Failed to fetch data from server");
         }
 
@@ -56,6 +70,10 @@ export const AppProvider = ({ children }) => {
         ]);
 
         console.log("🔍 API Response - Exams data:", examData);
+        console.log(
+          "🔍 API Response - Exams type:",
+          Array.isArray(examData) ? "Array" : typeof examData
+        );
         console.log("🔍 API Response - Faculties data:", facData);
         console.log("🔍 API Response - Courses data:", courseData);
 

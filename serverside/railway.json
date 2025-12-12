@@ -1,0 +1,7 @@
+{
+  "buildCommand": "npm ci",
+  "startCommand": "node index.js",
+  "nixpacks": {
+    "providers": ["node-npm"]
+  }
+}
