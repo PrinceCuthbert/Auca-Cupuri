@@ -65,11 +65,18 @@ const authController = {
         return res.status(400).json({ message: "Invalid credentials" });
 
       const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
-        expiresIn: "1d",
+        expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+      });
+
+      // Set HttpOnly cookie
+      res.cookie("token", token, {
+        httpOnly: true, // JavaScript cannot access this cookie
+        secure: process.env.NODE_ENV === "production", // HTTPS only in production
+        sameSite: "strict", // CSRF protection
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
       });
 
       res.json({
-        token,
         user: { id: user.id, name: user.name, role: user.role },
       });
     } catch (err) {
@@ -82,6 +89,16 @@ const authController = {
       }
       res.status(500).json({ message: "Server error" });
     }
+  },
+
+  // LOGOUT USER
+  logout(req, res) {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+    res.json({ message: "Logged out successfully" });
   },
 };
 

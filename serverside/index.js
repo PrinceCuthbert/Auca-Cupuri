@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.js";
 import facultyRoutes from "./routes/faculties.js";
@@ -12,7 +13,13 @@ dotenv.config();
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Vite dev server
+    credentials: true, // Allow credentials (cookies)
+  })
+);
+app.use(cookieParser()); // Parse cookies
 app.use(express.json());
 app.use("/uploads", express.static("uploads")); // serve uploaded files
 
