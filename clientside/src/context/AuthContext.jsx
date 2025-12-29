@@ -20,27 +20,23 @@ export function AuthProvider({ children }) {
   // LOGIN
   const login = async (email, password) => {
     try {
-      console.log("Attempting login to:", `${BASE_URL}/auth/login`);
       const res = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-        credentials: "include", // Send cookies with request
+        credentials: "include",
       });
 
       const data = await res.json();
-      console.log("Login response:", { status: res.status, data });
 
       if (!res.ok) {
         throw new Error(data.message || "Login failed");
       }
 
-      // Store only user info (token is in HttpOnly cookie)
       localStorage.setItem("auca-cupuri-user", JSON.stringify(data.user));
       setUser(data.user);
       return data.user;
     } catch (error) {
-      console.error("Login error:", error);
       throw error;
     }
   };
@@ -48,58 +44,36 @@ export function AuthProvider({ children }) {
   // REGISTER
   const register = async ({ fullName, email, role, password }) => {
     try {
-      console.log("Attempting registration to:", `${BASE_URL}/auth/register`);
-      console.log("Registration payload:", {
-        fullName,
-        email,
-        role,
-        password: "***",
-      });
-
       const res = await fetch(`${BASE_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: fullName, // backend expects `name`
+          name: fullName,
           email,
           role,
           password,
         }),
       });
 
-      console.log("Registration response status:", res.status);
-      console.log(
-        "Registration response headers:",
-        Object.fromEntries(res.headers.entries())
-      );
-
       const data = await res.json();
-      console.log("Registration response data:", data);
 
       if (!res.ok) {
         throw new Error(data.message || "Signup failed");
       }
       return data;
     } catch (error) {
-      console.error("Registration error:", error);
-      console.error("Error details:", {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      });
       throw error;
     }
   };
 
   const logout = async () => {
     try {
-      // Optional: notify server to clear cookie
       await fetch(`${BASE_URL}/auth/logout`, {
         method: "POST",
         credentials: "include",
-      }).catch(() => {}); // ignore errors
-    } catch (error) {
-      console.error("Logout error:", error);
+      }).catch(() => {});
+    } catch {
+      // Silent fail - logout should always clear local state
     }
     localStorage.removeItem("auca-cupuri-user");
     setUser(null);

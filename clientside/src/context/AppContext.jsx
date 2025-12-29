@@ -30,8 +30,6 @@ export const AppProvider = ({ children }) => {
       setLoading(true);
 
       try {
-        console.log("📍 Fetching protected data with cookies");
-
         const [facRes, courseRes, examRes] = await Promise.all([
           fetch(`${BASE_URL}/faculties`, { credentials: "include" }),
           fetch(`${BASE_URL}/courses`, { credentials: "include" }),
@@ -51,8 +49,8 @@ export const AppProvider = ({ children }) => {
         setFaculties(facData);
         setCourses(courseData);
         setExams(examData);
-      } catch (err) {
-        console.error("Error fetching app data:", err);
+      } catch {
+        // Silent fail - data will be empty
       } finally {
         setLoading(false);
       }
@@ -92,8 +90,8 @@ export const AppProvider = ({ children }) => {
       if (!examRes.ok) throw new Error("Failed to refresh exams");
       const examData = await examRes.json();
       setExams(examData);
-    } catch (err) {
-      console.error("Error refreshing exams:", err);
+    } catch {
+      // Silent fail - keep existing exams data
     }
   };
 

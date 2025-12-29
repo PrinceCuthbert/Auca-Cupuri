@@ -197,7 +197,6 @@ function UploadForm() {
         navigate("/cupuriportal/dashboard");
       }, 2000);
     } catch (error) {
-      console.error("Upload error:", error);
       toast.error(error.message || "Failed to upload exam");
     } finally {
       setLoading(false);
