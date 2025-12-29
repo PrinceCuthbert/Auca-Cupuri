@@ -35,24 +35,19 @@ const AdminReviews = () => {
 
   const fetchReviews = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem("auca-cupuri-user"));
-      if (!user?.token) return;
-
       const response = await fetch(
         "http://localhost:3009/api/reviews/general",
         {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
+          credentials: "include",
         }
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        setReviews(data);
-      } else {
-        console.error("Failed to fetch reviews");
+      if (!response.ok) {
+        throw new Error("Unauthorized");
       }
+
+      const data = await response.json();
+      setReviews(data);
     } catch (error) {
       console.error("Error fetching reviews:", error);
     } finally {
@@ -75,12 +70,6 @@ const AdminReviews = () => {
       onOk: async () => {
         console.log("Delete confirmed for review ID:", reviewId);
         try {
-          const user = JSON.parse(localStorage.getItem("auca-cupuri-user"));
-          if (!user?.token) {
-            console.error("No user token found");
-            return;
-          }
-
           console.log(
             "Sending delete request to:",
             `http://localhost:3009/api/reviews/general/${reviewId}`
@@ -90,9 +79,7 @@ const AdminReviews = () => {
             `http://localhost:3009/api/reviews/general/${reviewId}`,
             {
               method: "DELETE",
-              headers: {
-                Authorization: `Bearer ${user.token}`,
-              },
+              credentials: "include",
             }
           );
 
@@ -140,16 +127,11 @@ const AdminReviews = () => {
       cancelText: "Cancel",
       onOk: async () => {
         try {
-          const user = JSON.parse(localStorage.getItem("auca-cupuri-user"));
-          if (!user?.token) return;
-
           const response = await fetch(
             `http://localhost:3009/api/reviews/${reviewId}/response`,
             {
               method: "DELETE",
-              headers: {
-                Authorization: `Bearer ${user.token}`,
-              },
+              credentials: "include",
             }
           );
 
@@ -198,17 +180,14 @@ const AdminReviews = () => {
 
     setIsResponding(true);
     try {
-      const user = JSON.parse(localStorage.getItem("auca-cupuri-user"));
-      if (!user?.token) return;
-
       const isEdit = !!selectedReview.admin_response;
       const response = await fetch(
         `http://localhost:3009/api/reviews/${selectedReview.id}/response`,
         {
           method: isEdit ? "PUT" : "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${user.token}`,
           },
           body: JSON.stringify({ response: responseText }),
         }

@@ -155,3 +155,35 @@
     transform: translateY(0) scale(1);
   }
 }
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .confirmation-dialog {
+    width: 95%;
+    max-width: none;
+  }
+
+  .dialog-header {
+    padding: 16px 20px 12px;
+  }
+
+  .dialog-body {
+    padding: 16px 20px;
+  }
+
+  .dialog-footer {
+    padding: 12px 20px 16px;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .cancel-btn,
+  .confirm-btn {
+    width: 100%;
+    padding: 12px;
+  }
+
+  .dialog-header h3 {
+    font-size: 1rem;
+  }
+}

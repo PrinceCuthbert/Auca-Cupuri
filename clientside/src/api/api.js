@@ -2,30 +2,28 @@
 export const BASE_URL =
   import.meta.env.VITE_BASE_URL || "http://localhost:3009/api";
 
-const getAuthHeaders = () => {
-  const user = JSON.parse(localStorage.getItem("auca-cupuri-user"));
-  if (!user?.token) return {};
-  return { Authorization: `Bearer ${user.token}` };
+const requestOptions = {
+  credentials: "include", // Send cookies automatically
 };
 
 export const fetchFaculties = () =>
   fetch(`${BASE_URL}/faculties`, {
-    headers: { ...getAuthHeaders() },
+    ...requestOptions,
   });
 
 export const fetchCourses = () =>
   fetch(`${BASE_URL}/courses`, {
-    headers: { ...getAuthHeaders() },
+    ...requestOptions,
   });
 
 export const fetchExams = () =>
   fetch(`${BASE_URL}/exams`, {
-    headers: { ...getAuthHeaders() },
+    ...requestOptions,
   });
 
 export const uploadExam = (formData) =>
   fetch(`${BASE_URL}/exams/upload`, {
     method: "POST",
-    headers: { ...getAuthHeaders() }, // add token here too
+    ...requestOptions,
     body: formData,
   });

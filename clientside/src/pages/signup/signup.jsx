@@ -5,14 +5,11 @@ import { toast } from "react-toastify";
 
 import { useAuth } from "../../context/AuthContext";
 import Footer from "../footer";
-import "../../css/homepage/login/login.css";
-import "../../css/homepage/signup/signup.css";
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
-    role: "",
     password: "",
     confirmPassword: "",
   });
@@ -34,12 +31,7 @@ export default function SignUp() {
       return toast.error("Passwords do not match!");
     }
 
-    if (
-      !formData.fullName ||
-      !formData.email ||
-      !formData.role ||
-      !formData.password
-    ) {
+    if (!formData.fullName || !formData.email || !formData.password) {
       return toast.error("Please fill in all fields!");
     }
 
@@ -49,7 +41,8 @@ export default function SignUp() {
       await register({
         fullName: formData.fullName,
         email: formData.email,
-        role: formData.role,
+        // role is fixed to 'student' for all new self-registrations
+        role: "student",
         password: formData.password,
       });
 
@@ -67,25 +60,33 @@ export default function SignUp() {
 
   return (
     <>
-      <div className="login-page">
-        <div className="login-title-section">
-          <div className="icon-container">
-            <GraduationCap className="icon-white" />
+      <div className="min-h-screen bg-emerald-50 flex flex-col items-center justify-center p-4">
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full mx-auto mb-4 flex items-center justify-center">
+            <GraduationCap className="w-8 h-8 text-white" />
           </div>
-          <h2>Create your account</h2>
-          <p className="signup">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Create your account
+          </h2>
+          <p className="text-gray-600">
             Already have an account?{" "}
-            <Link to="/cupuriportal/login" className="signup-link">
+            <Link
+              to="/cupuriportal/login"
+              className="text-emerald-600 font-semibold hover:underline">
               Sign in here
             </Link>
           </p>
         </div>
 
-        <main className="login-main">
-          <div className="login-card">
-            <form className="login-form" onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="fullName">Full Name</label>
+        <main className="w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-md p-8">
+            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="fullName"
+                  className="font-semibold text-sm text-gray-700">
+                  Full Name
+                </label>
                 <input
                   type="text"
                   id="fullName"
@@ -93,12 +94,17 @@ export default function SignUp() {
                   placeholder="Enter your full name"
                   value={formData.fullName}
                   onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
                   required
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="email">Email</label>
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="email"
+                  className="font-semibold text-sm text-gray-700">
+                  Email
+                </label>
                 <input
                   type="email"
                   id="email"
@@ -106,60 +112,72 @@ export default function SignUp() {
                   placeholder="Enter your email"
                   value={formData.email}
                   onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
                   required
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="role">Role</label>
-                <select
-                  id="role"
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  required>
-                  <option value="">Select Role</option>
-                  <option value="student">Student</option>
-                  <option value="admin">Admin</option>
-                </select>
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="password"
+                  className="font-semibold text-sm text-gray-700">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    name="password"
+                    placeholder="Enter password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    onClick={() => setShowPassword(!showPassword)}>
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
               </div>
 
-              <div className="form-group input-with-icon">
-                <label htmlFor="password">Password</label>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  name="password"
-                  placeholder="Enter password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                />
-                <span onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? <EyeOff /> : <Eye />}
-                </span>
-              </div>
-
-              <div className="form-group input-with-icon">
-                <label htmlFor="confirmPassword">Confirm Password</label>
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  placeholder="Confirm password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                />
-                <span
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                  {showConfirmPassword ? <EyeOff /> : <Eye />}
-                </span>
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="confirmPassword"
+                  className="font-semibold text-sm text-gray-700">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    placeholder="Confirm password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    onClick={() =>
+                      setShowConfirmPassword(!showConfirmPassword)
+                    }>
+                    {showConfirmPassword ? (
+                      <EyeOff size={20} />
+                    ) : (
+                      <Eye size={20} />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <button
                 type="submit"
-                className="submit-button"
+                className="mt-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
                 disabled={loading}>
                 {loading ? "Creating account..." : "Create account"}
               </button>

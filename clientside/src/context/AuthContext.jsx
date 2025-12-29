@@ -5,9 +5,17 @@ const AuthContext = createContext();
 const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:3009/api";
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(
-    () => JSON.parse(localStorage.getItem("auca-cupuri-user")) || null
-  );
+  function loadStoredUser() {
+    try {
+      const raw = localStorage.getItem("auca-cupuri-user");
+      if (!raw || raw === "undefined") return null;
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  const [user, setUser] = useState(loadStoredUser);
 
   // LOGIN
   const login = async (email, password) => {
@@ -17,6 +25,7 @@ export function AuthProvider({ children }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        credentials: "include", // Send cookies with request
       });
 
       const data = await res.json();
@@ -26,11 +35,10 @@ export function AuthProvider({ children }) {
         throw new Error(data.message || "Login failed");
       }
 
-      // store user info + token
-      const userWithToken = { ...data.user, token: data.token };
-      localStorage.setItem("auca-cupuri-user", JSON.stringify(userWithToken));
-      setUser(userWithToken);
-      return userWithToken;
+      // Store only user info (token is in HttpOnly cookie)
+      localStorage.setItem("auca-cupuri-user", JSON.stringify(data.user));
+      setUser(data.user);
+      return data.user;
     } catch (error) {
       console.error("Login error:", error);
       throw error;
@@ -83,7 +91,16 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      // Optional: notify server to clear cookie
+      await fetch(`${BASE_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      }).catch(() => {}); // ignore errors
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
     localStorage.removeItem("auca-cupuri-user");
     setUser(null);
   };

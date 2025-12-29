@@ -1,8 +1,4 @@
 import React from "react";
-import "../../css/homepage/header.css";
-import "../../css/footer.css";
-import "../../css/homepage/welcomeBanner.css";
-import "../../css/homepage/aboutSection.css";
 
 import { Link } from "react-router-dom";
 import {
@@ -37,23 +33,29 @@ function Home() {
 
 function WelcomeBanner() {
   return (
-    <div className="welcome-banner">
-      <div className="banner-icon">
-        <GraduationCap className="icon" />
+    <div className="bg-gradient-to-r from-emerald-800 to-slate-900 text-white shadow-md rounded-lg text-center py-12 px-6 mb-12">
+      <div className="bg-emerald-600 w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center">
+        <GraduationCap className="w-8 h-8 text-white" />
       </div>
-      <h1 className="banner-title">
-        Welcome to <span className="highlight">AUCA CUPURI</span>
+      <h1 className="text-4xl md:text-4xl font-extrabold mb-4 leading-tight">
+        Welcome to <span className="text-yellow-400">AUCA CUPURI</span>
       </h1>
-      <p className="banner-subtext">
+      <p className="text-gray-200 text-base md:text-lg max-w-2xl mx-auto mb-8 leading-relaxed">
         Your comprehensive portal for accessing past examination papers across
         all faculties. Study smarter with our organized collection of academic
         resources.
       </p>
-      <div className="banner-buttons">
-        <Link to="/cupuriportal/signup" className="btn-yellow">
+      <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-md mx-auto">
+        <Link 
+          to="/cupuriportal/signup" 
+          className="bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-medium py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors duration-300 shadow-lg"
+        >
           Get Started <ArrowRight size={16} />
         </Link>
-        <Link to="/cupuriportal/login" className="btn-outline">
+        <Link 
+          to="/cupuriportal/login" 
+          className="border-2 border-white hover:bg-white/10 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-300"
+        >
           Login
         </Link>
       </div>
@@ -63,28 +65,28 @@ function WelcomeBanner() {
 
 function AboutSection() {
   return (
-    <section className="about-section">
-      <div className="about-left">
-        <div className="about-header">
-          <BookOpenText className="icon" />
-          <h2>
-            About <span className="highlight">AUCA CUPURI</span>
+    <section className="flex flex-col md:flex-row bg-white rounded-lg shadow-md overflow-hidden mb-12">
+      <div className="p-8 md:p-12 flex-1 flex flex-col justify-center">
+        <div className="flex items-center gap-3 mb-4">
+          <BookOpenText className="w-8 h-8 text-emerald-600" />
+          <h2 className="text-2xl font-bold">
+            About <span className="text-yellow-500">AUCA CUPURI</span>
           </h2>
         </div>
-        <p>
+        <p className="mb-4">
           <strong>AUCA CUPURI</strong>
           (AUCA Comprehensive University Past Resources Initiative) is a
           dedicated digital platform designed to enhance academic excellence at
           Adventist University of Central Africa.
         </p>
-        <p>
+        <p className="mb-6">
           Our portal serves as a centralized repository for past examination
           papers across all faculties, providing students with easy access to
           valuable study materials that can significantly improve their academic
           performance and exam preparation strategies.
         </p>
 
-        <div className="mission-box">
+        <div className="bg-emerald-100 border-l-4 border-emerald-600 p-4 rounded-lg text-emerald-800 my-6">
           <strong>Our Mission</strong>
           <br />
           To democratize access to academic resources, foster collaborative
@@ -93,34 +95,33 @@ function AboutSection() {
           materials.
         </div>
 
-        <div className="about-highlights">
-          <div className="highlight-box">
-            <School size={40} className="school-icon" />
+        <div className="space-y-4">
+          <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
+            <School size={40} className="text-emerald-600 flex-shrink-0" />
             <span>
-              <strong>Organized by Faculty</strong>
-              <br />
+              <strong className="block mb-1">Organized by Faculty</strong>
               Browse exams by Software Engineering, Information Management, and
               Networking & Telecommunications
             </span>
           </div>
-          <div className="highlight-box">
-            <ListChecks size={40} className="check-list-icon" />
+          <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
+            <ListChecks size={40} className="text-emerald-600 flex-shrink-0" />
             <span>
-              <strong>Comprehensive Coverage</strong>
-              <br />
+              <strong className="block mb-1">Comprehensive Coverage</strong>
               Access both Mid Term and Final exams from various academic years
             </span>
           </div>
         </div>
       </div>
 
-      <div className="about-right">
+      <div className="flex-1 bg-emerald-50 flex flex-col items-center justify-center p-8">
         <img
           src="https://images.pexels.com/photos/5212351/pexels-photo-5212351.jpeg?auto=compress&cs=tinysrgb&h=300"
           alt="Student Success"
+          className="max-w-full h-auto rounded-md shadow-sm mb-4"
         />
-        <p className="caption">Empowering Student Success</p>
-        <small>
+        <p className="font-medium text-lg text-center mb-1">Empowering Student Success</p>
+        <small className="text-gray-600 text-center">
           Join thousands of students who have improved their academic
           performance using our platform
         </small>

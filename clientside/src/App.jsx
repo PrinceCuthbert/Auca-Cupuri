@@ -11,6 +11,8 @@ import AdminReviews from "./pages/admin/AdminReviews";
 import StudentReviews from "./pages/student/StudentReviews";
 import Header from "./pages/header/header";
 
+import ProtectedRoute from "./routes/ProtectedRoute";
+
 import "./App.css";
 
 function App() {
@@ -18,25 +20,24 @@ function App() {
     <>
       <ToastContainer position="top-right" autoClose={2000} />
       <Router>
-        {/* Common Header if you want it on all pages */}
         <Header />
 
         <Routes>
-          {/* Default landing page */}
+          {/* Public */}
           <Route path="/" element={<Home />} />
 
-          {/* All routes are children of /cupuriportal */}
           <Route path="/cupuriportal">
-            {/* Auth pages */}
             <Route path="login" element={<Login />} />
             <Route path="signup" element={<SignUp />} />
 
-            {/* Dashboard, upload and browse */}
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="dashboard/upload" element={<UploadForm />} />
-            <Route path="dashboard/browse" element={<BrowseExams />} />
-            <Route path="dashboard/reviews" element={<AdminReviews />} />
-            <Route path="reviews" element={<StudentReviews />} />
+            {/* 🔐 Protected section */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="dashboard/upload" element={<UploadForm />} />
+              <Route path="dashboard/browse" element={<BrowseExams />} />
+              <Route path="dashboard/reviews" element={<AdminReviews />} />
+              <Route path="reviews" element={<StudentReviews />} />
+            </Route>
           </Route>
         </Routes>
       </Router>

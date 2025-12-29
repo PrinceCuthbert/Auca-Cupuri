@@ -7,15 +7,21 @@ import facultyRoutes from "./routes/faculties.js";
 import courseRoutes from "./routes/courses.js";
 import examRoutes from "./routes/exams.js";
 import reviewRoutes from "./routes/reviews.js";
+import visitRoutes from "./routes/visits.js";
 import errorHandler from "./middlewares/errorHandler.js";
 
 dotenv.config();
 const app = express();
 
+//} Get allowed origins from environment or use defaults
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",")
+  : ["http://localhost:5173", "http://localhost:5174"];
+
 // Middlewares
 app.use(
   cors({
-    origin: "http://localhost:5173", // Vite dev server
+    origin: allowedOrigins,
     credentials: true, // Allow credentials (cookies)
   })
 );
@@ -39,6 +45,7 @@ app.use("/api/faculties", facultyRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/exams", examRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/visits", visitRoutes);
 
 // Error handler
 app.use(errorHandler);

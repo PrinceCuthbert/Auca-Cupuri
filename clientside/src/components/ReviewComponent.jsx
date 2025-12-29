@@ -20,15 +20,12 @@ const ReviewComponent = ({ examId, onReviewSubmit }) => {
 
   const fetchUserReview = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem("auca-cupuri-user"));
-      if (!user?.token) return;
+      if (!user) return;
 
       const response = await fetch(
         `http://localhost:3009/api/reviews/exam/${examId}/user`,
         {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
+          credentials: "include",
         }
       );
 
@@ -47,15 +44,12 @@ const ReviewComponent = ({ examId, onReviewSubmit }) => {
 
   const fetchReviewStats = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem("auca-cupuri-user"));
-      if (!user?.token) return;
+      if (!user) return;
 
       const response = await fetch(
         `http://localhost:3009/api/reviews/exam/${examId}/stats`,
         {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
+          credentials: "include",
         }
       );
 
@@ -72,38 +66,58 @@ const ReviewComponent = ({ examId, onReviewSubmit }) => {
     e.preventDefault();
     if (rating === 0) return;
 
+    console.log("🔍 Review Submit Debug:");
+    console.log("User object:", user);
+    console.log("User exists?", !!user);
+    console.log("Rating:", rating);
+    console.log("Comment:", comment);
+    console.log("Exam ID:", examId);
+
+    if (!user) {
+      console.error("❌ User is null/undefined - not authenticated");
+      alert("Please login to submit a review");
+      return;
+    }
+
     setLoading(true);
     try {
-      const user = JSON.parse(localStorage.getItem("auca-cupuri-user"));
-      if (!user?.token) {
-        alert("Please login to submit a review");
-        return;
-      }
-
+      console.log(
+        "📤 Sending review to:",
+        `http://localhost:3009/api/reviews/exam/${examId}`
+      );
       const response = await fetch(
         `http://localhost:3009/api/reviews/exam/${examId}`,
         {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${user.token}`,
           },
           body: JSON.stringify({ rating, comment }),
         }
       );
 
+      console.log("📥 Response status:", response.status);
+      console.log("Response ok?", response.ok);
+
       if (response.ok) {
         const result = await response.json();
+        console.log("✅ Success:", result);
         alert(result.message);
         fetchUserReview();
         fetchReviewStats();
         if (onReviewSubmit) onReviewSubmit();
       } else {
         const error = await response.json();
+        console.error("❌ Error response:", error);
+        console.error("Error status:", response.status);
+        console.error("Error message:", error.message);
         alert(error.message || "Failed to submit review");
       }
     } catch (error) {
-      console.error("Error submitting review:", error);
+      console.error("💥 Exception caught:", error);
+      console.error("Error details:", error.message);
+      console.error("Error stack:", error.stack);
       alert("Failed to submit review");
     } finally {
       setLoading(false);
@@ -113,18 +127,15 @@ const ReviewComponent = ({ examId, onReviewSubmit }) => {
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete your review?")) return;
 
+    if (!user) return;
+
     setLoading(true);
     try {
-      const user = JSON.parse(localStorage.getItem("auca-cupuri-user"));
-      if (!user?.token) return;
-
       const response = await fetch(
         `http://localhost:3009/api/reviews/exam/${examId}`,
         {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
+          credentials: "include",
         }
       );
 

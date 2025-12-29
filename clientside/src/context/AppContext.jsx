@@ -1,66 +1,45 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { BASE_URL } from "../api/api"; // import your api helper
+import { BASE_URL } from "../api/api";
+import { useAuth } from "./AuthContext";
 
 const AppContext = createContext();
 
 export const useApp = () => {
   const context = useContext(AppContext);
-  if (!context) throw new Error("useApp must be used within an AppProvider");
+  if (!context) {
+    throw new Error("useApp must be used within an AppProvider");
+  }
   return context;
 };
 
-// Helper function to get auth headers
-const getAuthHeaders = () => {
-  const user = JSON.parse(localStorage.getItem("auca-cupuri-user"));
-  if (!user?.token) return {};
-  return { Authorization: `Bearer ${user.token}` };
-};
-
 export const AppProvider = ({ children }) => {
+  const { user } = useAuth(); // 👈 auth truth comes from AuthContext
+
   const [faculties, setFaculties] = useState([]);
   const [courses, setCourses] = useState([]);
   const [exams, setExams] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        // Check if user is logged in
-        const user = JSON.parse(localStorage.getItem("auca-cupuri-user"));
-        if (!user?.token) {
-          console.log("No user token found, skipping data fetch");
-          setLoading(false);
-          return;
-        }
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-        console.log(
-          "🔐 Auth token found:",
-          user.token.substring(0, 20) + "..."
-        );
-        console.log("📍 Fetching from:", BASE_URL);
+      setLoading(true);
+
+      try {
+        console.log("📍 Fetching protected data with cookies");
 
         const [facRes, courseRes, examRes] = await Promise.all([
-          fetch(`${BASE_URL}/faculties`, {
-            headers: { ...getAuthHeaders() },
-          }),
-          fetch(`${BASE_URL}/courses`, {
-            headers: { ...getAuthHeaders() },
-          }),
-          fetch(`${BASE_URL}/exams`, {
-            headers: { ...getAuthHeaders() },
-          }),
+          fetch(`${BASE_URL}/faculties`, { credentials: "include" }),
+          fetch(`${BASE_URL}/courses`, { credentials: "include" }),
+          fetch(`${BASE_URL}/exams`, { credentials: "include" }),
         ]);
 
-        console.log("📡 API Responses:", {
-          faculties: { status: facRes.status, ok: facRes.ok },
-          courses: { status: courseRes.status, ok: courseRes.ok },
-          exams: { status: examRes.status, ok: examRes.ok },
-        });
-
         if (!facRes.ok || !courseRes.ok || !examRes.ok) {
-          const examErr = await examRes.text();
-          console.error("Exam API error response:", examErr);
-          throw new Error("Failed to fetch data from server");
+          throw new Error("Unauthorized or failed fetch");
         }
 
         const [facData, courseData, examData] = await Promise.all([
@@ -68,14 +47,6 @@ export const AppProvider = ({ children }) => {
           courseRes.json(),
           examRes.json(),
         ]);
-
-        console.log("🔍 API Response - Exams data:", examData);
-        console.log(
-          "🔍 API Response - Exams type:",
-          Array.isArray(examData) ? "Array" : typeof examData
-        );
-        console.log("🔍 API Response - Faculties data:", facData);
-        console.log("🔍 API Response - Courses data:", courseData);
 
         setFaculties(facData);
         setCourses(courseData);
@@ -86,24 +57,24 @@ export const AppProvider = ({ children }) => {
         setLoading(false);
       }
     };
+
     fetchData();
-  }, []);
+  }, [user]); // 👈 refetch when login/logout happens
 
   const addExam = async (formData) => {
-    try {
-      const res = await fetch(`${BASE_URL}/exams/upload`, {
-        method: "POST",
-        headers: { ...getAuthHeaders() },
-        body: formData,
-      });
-      if (!res.ok) throw new Error("Failed to upload exam");
-      const newExam = await res.json();
-      setExams((prev) => [...prev, newExam]);
-      return newExam;
-    } catch (err) {
-      console.error(err);
-      throw err;
+    const res = await fetch(`${BASE_URL}/exams/upload`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to upload exam");
     }
+
+    const newExam = await res.json();
+    setExams((prev) => [...prev, newExam]);
+    return newExam;
   };
 
   const getCoursesByFaculty = (facultyIdOrName) =>
@@ -113,6 +84,19 @@ export const AppProvider = ({ children }) => {
         course.faculty === facultyIdOrName
     );
 
+  const refreshExams = async () => {
+    try {
+      const examRes = await fetch(`${BASE_URL}/exams`, {
+        credentials: "include",
+      });
+      if (!examRes.ok) throw new Error("Failed to refresh exams");
+      const examData = await examRes.json();
+      setExams(examData);
+    } catch (err) {
+      console.error("Error refreshing exams:", err);
+    }
+  };
+
   const getExamsByCourse = (courseId, examType) =>
     exams.filter(
       (exam) =>
@@ -121,14 +105,14 @@ export const AppProvider = ({ children }) => {
     );
 
   const searchExams = (query) => {
-    const lowercaseQuery = query.toLowerCase();
+    const q = query.toLowerCase();
     return exams.filter(
       (exam) =>
-        exam.title.toLowerCase().includes(lowercaseQuery) ||
+        exam.title.toLowerCase().includes(q) ||
         courses.find(
           (course) =>
             course._id === exam.courseId &&
-            course.title.toLowerCase().includes(lowercaseQuery)
+            course.title.toLowerCase().includes(q)
         )
     );
   };
@@ -141,6 +125,7 @@ export const AppProvider = ({ children }) => {
         exams,
         loading,
         addExam,
+        refreshExams,
         getCoursesByFaculty,
         getExamsByCourse,
         searchExams,

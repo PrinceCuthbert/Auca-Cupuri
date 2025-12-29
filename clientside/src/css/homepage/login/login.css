@@ -23,6 +23,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 1rem;
 }
 
 .login-title-section {
@@ -157,4 +158,48 @@
   border-radius: 0.5rem;
   flex: 1;
   font-size: 0.875rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .login-header {
+    padding: 1rem;
+  }
+
+  .login-title-section {
+    padding: 2rem;
+  }
+
+  .login-card {
+    padding: 1.5rem;
+  }
+
+  .demo-boxes {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .login-title-section {
+    padding: 1.5rem;
+  }
+
+  .login-title-section > h2 {
+    font-size: 1.4rem;
+  }
+
+  .login-card {
+    padding: 1.25rem;
+  }
+
+  .icon-container {
+    width: 40px;
+    height: 40px;
+  }
 }

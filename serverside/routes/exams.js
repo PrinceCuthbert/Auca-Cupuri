@@ -55,7 +55,7 @@ router.post(
   "/upload",
   verifyToken,
   permit("admin", "student"),
-  upload.single("exam"),
+  upload.array("exam", 10), // Allow up to 10 files
   uploadExam
 );
 router.put("/:id", verifyToken, permit("admin"), updateExam);

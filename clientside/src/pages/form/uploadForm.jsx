@@ -1,7 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import "../../css/forms/uploadForm.css";
-import { Upload as UploadIcon, UploadCloud as CloudUpload } from "lucide-react";
+import {
+  Upload as UploadIcon,
+  UploadCloud as CloudUpload,
+  FileText,
+  X,
+  CheckCircle,
+  GripVertical,
+  Image,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import Footer from "../footer";
 import { Select } from "antd";
@@ -12,12 +19,15 @@ const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 function UploadForm() {
   const navigate = useNavigate();
+  const { refreshExams } = useApp();
 
   const [title, setTitle] = useState();
   const [course, setCourse] = useState("");
   const [examType, setExamType] = useState();
   const [faculty, setFaculty] = useState();
-  const [exam, setExam] = useState();
+  const [examFiles, setExamFiles] = useState([]); // Array of files
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   // ✅ Extracted all courses from the commented section
   const courses = [
@@ -81,22 +91,80 @@ function UploadForm() {
 
   const examTypes = ["Mid-Term", "Final"];
 
+  // Handle adding files
+  const handleFileChange = (e) => {
+    const newFiles = Array.from(e.target.files);
+    setExamFiles((prev) => [...prev, ...newFiles]);
+    // Reset input so same file can be added again if removed
+    e.target.value = "";
+  };
+
+  // Remove a specific file
+  const removeFile = (index) => {
+    setExamFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Move file up in order
+  const moveFileUp = (index) => {
+    if (index === 0) return;
+    setExamFiles((prev) => {
+      const newFiles = [...prev];
+      [newFiles[index - 1], newFiles[index]] = [
+        newFiles[index],
+        newFiles[index - 1],
+      ];
+      return newFiles;
+    });
+  };
+
+  // Move file down in order
+  const moveFileDown = (index) => {
+    if (index === examFiles.length - 1) return;
+    setExamFiles((prev) => {
+      const newFiles = [...prev];
+      [newFiles[index], newFiles[index + 1]] = [
+        newFiles[index + 1],
+        newFiles[index],
+      ];
+      return newFiles;
+    });
+  };
+
+  // Check if file is an image
+  const isImageFile = (file) => {
+    return file.type.startsWith("image/");
+  };
+
+  // Get total file size
+  const getTotalFileSize = () => {
+    return examFiles.reduce((sum, file) => sum + file.size, 0);
+  };
+
   async function HandleSubmit(e) {
     e.preventDefault();
+    setLoading(true);
 
-    if (!exam) return toast.error("Please upload a file.");
+    if (examFiles.length === 0) {
+      toast.error("Please upload at least one file.");
+      setLoading(false);
+      return;
+    }
 
     const formData = new FormData();
     formData.append("title", title);
     formData.append("faculty", faculty);
     formData.append("course", course);
     formData.append("examType", examType);
-    formData.append("exam", exam);
+
+    // Append all files
+    examFiles.forEach((file) => {
+      formData.append("exam", file);
+    });
 
     try {
-      // Get user token from localStorage
+      // Check if user is logged in
       const user = JSON.parse(localStorage.getItem("auca-cupuri-user"));
-      if (!user?.token) {
+      if (!user) {
         toast.error("Please login to upload exams");
         navigate("/cupuriportal/login");
         return;
@@ -104,9 +172,7 @@ function UploadForm() {
 
       const res = await fetch(`${BASE_URL}/exams/upload`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
+        credentials: "include", // Send cookies with request
         body: formData,
       });
 
@@ -116,30 +182,78 @@ function UploadForm() {
         throw new Error(data.message || "Failed to upload exam");
       }
 
-      toast.success("Exam uploaded successfully!");
-      navigate("/cupuriportal/dashboard");
+      toast.success(
+        `Exam uploaded successfully! (${examFiles.length} file${
+          examFiles.length > 1 ? "s" : ""
+        })`
+      );
+      setSuccess(true);
+
+      // Refresh exams in context so browse page updates immediately
+      await refreshExams();
+
+      // Redirect after success
+      setTimeout(() => {
+        navigate("/cupuriportal/dashboard");
+      }, 2000);
     } catch (error) {
       console.error("Upload error:", error);
       toast.error(error.message || "Failed to upload exam");
+    } finally {
+      setLoading(false);
     }
+  }
+
+  if (success) {
+    return (
+      <>
+        <div className="max-w-2xl mx-auto p-4">
+          <div className="bg-white rounded-xl shadow-lg border border-emerald-100 p-8 text-center">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Upload Successful!
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Your exam has been uploaded successfully and is now available for
+              students.
+            </p>
+            <button
+              onClick={() => navigate("/cupuriportal/dashboard")}
+              className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
   }
 
   return (
     <>
-      <div className="upload-container">
-        <div className="upload-header">
-          <h2>
-            <CloudUpload className="cloud-icon" size={40} />
-            Upload Exam
-          </h2>
-          <p>Add a new examination paper to the portal</p>
-        </div>
-        <hr />
-        <form className="upload-form" onSubmit={HandleSubmit}>
-          <div className="form-grid">
+      <div className="max-w-2xl mx-auto p-4">
+        <div className="bg-white rounded-xl shadow-lg border border-emerald-100">
+          {/* Header */}
+          <div className="p-6 border-b">
+            <div className="flex items-center space-x-3">
+              <div className="bg-gradient-to-br from-emerald-500 to-teal-500 p-2 rounded-lg">
+                <CloudUpload className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900">Upload Exam</h1>
+            </div>
+            <p className="text-gray-600 mt-1">
+              Add a new examination paper to the portal
+            </p>
+          </div>
+
+          <form onSubmit={HandleSubmit} className="p-6 space-y-6">
             {/* Exam Title */}
-            <div className="form-group">
-              <label htmlFor="examTitle">Exam Title *</label>
+            <div>
+              <label
+                htmlFor="examTitle"
+                className="block text-sm font-medium text-gray-700 mb-1">
+                Exam Title *
+              </label>
               <input
                 id="examTitle"
                 type="text"
@@ -147,12 +261,17 @@ function UploadForm() {
                 required
                 placeholder="e.g., Applied Mathematics Final 2023"
                 onChange={(e) => setTitle(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300"
               />
             </div>
 
             {/* Faculty (AntD Select) */}
-            <div className="form-group">
-              <label htmlFor="faculty">Faculty *</label>
+            <div>
+              <label
+                htmlFor="faculty"
+                className="block text-sm font-medium text-gray-700 mb-1">
+                Faculty *
+              </label>
               <Select
                 id="faculty"
                 showSearch
@@ -162,7 +281,8 @@ function UploadForm() {
                 onChange={(value) => setFaculty(value)}
                 filterOption={(input, option) =>
                   option?.children.toLowerCase().includes(input.toLowerCase())
-                }>
+                }
+                className="[&_.ant-select-selector]:!rounded-lg [&_.ant-select-selector]:!border-gray-300 [&_.ant-select-selector]:!py-1 [&_.ant-select-focused_.ant-select-selector]:!border-emerald-500 [&_.ant-select-focused_.ant-select-selector]:!shadow-[0_0_0_2px_rgba(16,185,129,0.2)]">
                 {faculties.map((f) => (
                   <Option key={f} value={f}>
                     {f}
@@ -172,8 +292,12 @@ function UploadForm() {
             </div>
 
             {/* Course (AntD Select) */}
-            <div className="form-group">
-              <label htmlFor="course">Course *</label>
+            <div>
+              <label
+                htmlFor="course"
+                className="block text-sm font-medium text-gray-700 mb-1">
+                Course *
+              </label>
               <Select
                 id="course"
                 showSearch
@@ -183,7 +307,8 @@ function UploadForm() {
                 onChange={(value) => setCourse(value)}
                 filterOption={(input, option) =>
                   option?.children.toLowerCase().includes(input.toLowerCase())
-                }>
+                }
+                className="[&_.ant-select-selector]:!rounded-lg [&_.ant-select-selector]:!border-gray-300 [&_.ant-select-selector]:!py-1 [&_.ant-select-focused_.ant-select-selector]:!border-emerald-500 [&_.ant-select-focused_.ant-select-selector]:!shadow-[0_0_0_2px_rgba(16,185,129,0.2)]">
                 {courses.map((c) => (
                   <Option key={c} value={c}>
                     {c}
@@ -193,14 +318,19 @@ function UploadForm() {
             </div>
 
             {/* Exam Type (AntD Select) */}
-            <div className="form-group">
-              <label htmlFor="examType">Exam Type *</label>
+            <div>
+              <label
+                htmlFor="examType"
+                className="block text-sm font-medium text-gray-700 mb-1">
+                Exam Type *
+              </label>
               <Select
                 id="examType"
                 placeholder="Select Exam Type"
                 style={{ width: "100%" }}
                 value={examType}
-                onChange={(value) => setExamType(value)}>
+                onChange={(value) => setExamType(value)}
+                className="[&_.ant-select-selector]:!rounded-lg [&_.ant-select-selector]:!border-gray-300 [&_.ant-select-selector]:!py-1 [&_.ant-select-focused_.ant-select-selector]:!border-emerald-500 [&_.ant-select-focused_.ant-select-selector]:!shadow-[0_0_0_2px_rgba(16,185,129,0.2)]">
                 {examTypes.map((et) => (
                   <Option key={et} value={et}>
                     {et}
@@ -210,51 +340,167 @@ function UploadForm() {
             </div>
 
             {/* File Upload */}
-            <div className="form-group file-upload">
-              <label htmlFor="uploadFile">Upload File *</label>
-              <div className="file-box">
-                <div className="upload-area">
-                  <UploadIcon className="upload-icon" />
-                  <div className="upload-text">
-                    <label htmlFor="uploadFile" className="file-label">
-                      <span>Upload a file</span>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Upload File(s) *
+                <span className="text-gray-400 font-normal ml-2">
+                  (You can upload multiple images for multi-page exams)
+                </span>
+              </label>
+              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-emerald-300 border-dashed rounded-xl hover:border-emerald-400 bg-emerald-50/50 transition-all duration-300">
+                <div className="space-y-1 text-center">
+                  <UploadIcon className="mx-auto h-12 w-12 text-emerald-500" />
+                  <div className="flex text-sm text-gray-600">
+                    <label
+                      htmlFor="uploadFile"
+                      className="relative cursor-pointer bg-white rounded-md font-medium text-emerald-600 hover:text-emerald-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-emerald-500 px-1">
+                      <span>Upload file(s)</span>
                       <input
-                        onChange={(e) => setExam(e.target.files[0])}
+                        onChange={handleFileChange}
                         type="file"
                         id="uploadFile"
                         name="uploadFile"
-                        required
-                        className="hidden-input"
+                        className="sr-only"
                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        multiple
                       />
                     </label>
-                    <p>or drag and drop</p>
+                    <p className="pl-1">or drag and drop</p>
                   </div>
-                  <p className="file-types">
-                    PDF, DOC, DOCX, JPG, PNG up to 10MB
+                  <p className="text-xs text-gray-500">
+                    PDF, DOC, DOCX, JPG, PNG up to 10MB each
+                  </p>
+                  <p className="text-xs text-emerald-600 font-medium">
+                    💡 Tip: For multi-page exams, select all images at once or
+                    add them one by one
                   </p>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Buttons */}
-          <div className="button-group">
-            <button
-              type="button"
-              className="cancel-btn"
-              onClick={() => navigate("/cupuriportal/dashboard")}>
-              Cancel
-            </button>
-            <button type="submit" className="upload-btn">
-              <UploadIcon
-                size={16}
-                style={{ marginRight: "6px", verticalAlign: "middle" }}
-              />
-              Upload Exam
-            </button>
-          </div>
-        </form>
+            {/* Selected Files Display */}
+            {examFiles.length > 0 && (
+              <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium text-gray-900">
+                    {examFiles.length} file{examFiles.length > 1 ? "s" : ""}{" "}
+                    selected
+                  </h4>
+                  <p className="text-sm text-gray-500">
+                    Total: {(getTotalFileSize() / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+
+                {examFiles.length > 1 && (
+                  <p className="text-xs text-gray-500 mb-3">
+                    📄 Files will be displayed in this order. Use arrows to
+                    reorder.
+                  </p>
+                )}
+
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {examFiles.map((file, index) => (
+                    <div
+                      key={`${file.name}-${index}`}
+                      className="flex items-center justify-between bg-white rounded-lg p-3 border border-emerald-100">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-xs text-gray-400 w-6">
+                          {index + 1}.
+                        </span>
+                        {isImageFile(file) ? (
+                          <Image className="h-6 w-6 text-blue-500" />
+                        ) : (
+                          <FileText className="h-6 w-6 text-emerald-500" />
+                        )}
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm truncate max-w-xs">
+                            {file.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {(file.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        {examFiles.length > 1 && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => moveFileUp(index)}
+                              disabled={index === 0}
+                              className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 15l7-7 7 7"
+                                />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveFileDown(index)}
+                              disabled={index === examFiles.length - 1}
+                              className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed">
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 9l-7 7-7-7"
+                                />
+                              </svg>
+                            </button>
+                          </>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeFile(index)}
+                          className="p-1 text-gray-400 hover:text-red-500 transition-colors">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add more files button */}
+                <label
+                  htmlFor="uploadFile"
+                  className="mt-3 flex items-center justify-center gap-2 py-2 px-4 border-2 border-dashed border-emerald-300 rounded-lg cursor-pointer hover:border-emerald-400 hover:bg-emerald-50 transition-all text-sm text-emerald-600 font-medium">
+                  <UploadIcon className="h-4 w-4" />
+                  Add more files
+                </label>
+              </div>
+            )}
+
+            {/* Buttons */}
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={() => navigate("/cupuriportal/dashboard")}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-300">
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-600 to-teal-600 border border-transparent rounded-lg hover:from-emerald-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center">
+                <UploadIcon className="h-4 w-4 mr-2" />
+                {loading ? "Uploading..." : "Upload Exam"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
       <Footer />
     </>
