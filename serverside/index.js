@@ -2,6 +2,9 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import facultyRoutes from "./routes/faculties.js";
 import courseRoutes from "./routes/courses.js";
@@ -10,8 +13,19 @@ import reviewRoutes from "./routes/reviews.js";
 import visitRoutes from "./routes/visits.js";
 import errorHandler from "./middlewares/errorHandler.js";
 
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 dotenv.config();
 const app = express();
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log("📁 Created uploads directory");
+}
 
 //} Get allowed origins from environment or use defaults
 const allowedOrigins = process.env.ALLOWED_ORIGINS

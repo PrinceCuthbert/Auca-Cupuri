@@ -120,22 +120,22 @@ export const uploadExam = async (req, res, next) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Handle single file vs multiple files
+    // Handle single file vs multiple files - store Cloudinary URLs
     let filePath;
     let totalFileSize = 0;
 
     if (files.length === 1) {
-      // Single file - store as string (backward compatible)
-      filePath = files[0].filename;
+      // Single file - store Cloudinary URL
+      filePath = files[0].path; // Cloudinary URL
       totalFileSize = files[0].size;
     } else {
-      // Multiple files - store as JSON array
-      const fileNames = files.map((f) => f.filename);
-      filePath = JSON.stringify(fileNames);
+      // Multiple files - store as JSON array of Cloudinary URLs
+      const fileUrls = files.map((f) => f.path);
+      filePath = JSON.stringify(fileUrls);
       totalFileSize = files.reduce((sum, f) => sum + f.size, 0);
     }
 
-    // Insert exam record with file path and file size
+    // Insert exam record with Cloudinary URL and file size
     const [result] = await pool.query(
       "INSERT INTO exams (title, faculty, course, examType, filePath, fileSize, uploadDate) VALUES (?, ?, ?, ?, ?, ?, NOW())",
       [title, faculty, course, examType, filePath, totalFileSize]
