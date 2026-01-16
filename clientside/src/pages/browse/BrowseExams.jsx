@@ -580,7 +580,7 @@ const BrowseExams = () => {
               onClick={(e) => e.stopPropagation()}>
               {getFileType(previewExam.filePath) === "pdf" ? (
                 <iframe
-                  src={`http://localhost:3009/uploads/${previewExam.filePath}#toolbar=0`}
+                  src={`${BASE_URL.replace("/api", "")}/uploads/${previewExam.filePath}#toolbar=0`}
                   className="w-full h-full"
                   title="Exam Preview"
                 />
@@ -589,7 +589,7 @@ const BrowseExams = () => {
                   {getFilePaths(previewExam.filePath).map((path, idx) => (
                     <img
                       key={idx}
-                      src={`http://localhost:3009/uploads/${path}`}
+                      src={`${BASE_URL.replace("/api", "")}/uploads/${path}`}
                       className="w-full rounded-lg shadow-lg"
                       alt="page"
                     />
@@ -598,7 +598,7 @@ const BrowseExams = () => {
               ) : (
                 <div className="flex items-center justify-center h-full">
                   <img
-                    src={`http://localhost:3009/uploads/${previewExam.filePath}`}
+                    src={`${BASE_URL.replace("/api", "")}/uploads/${previewExam.filePath}`}
                     className="max-w-full max-h-full object-contain"
                     alt="Preview"
                   />
