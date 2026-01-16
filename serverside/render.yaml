@@ -2,10 +2,23 @@ services:
   - type: web
     name: cupuri-backend
     runtime: node
+    region: oregon
+    plan: free
     buildCommand: npm ci
     startCommand: node index.js
+    healthCheckPath: /
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 3009
+        value: 10000
+      # Add these in Render Dashboard:
+      # DB_HOST - Your Aiven MySQL host
+      # DB_PORT - Your Aiven MySQL port
+      # DB_USER - Your Aiven MySQL user (avnadmin)
+      # DB_PASSWORD - Your Aiven MySQL password
+      # DB_NAME - auca_cupuri_portal
+      # JWT_SECRET - Your strong secret key
+      # JWT_EXPIRES_IN - 7d
+      # ALLOWED_ORIGINS - http://localhost:5173,http://localhost:5174,https://cupuri-portal.vercel.app

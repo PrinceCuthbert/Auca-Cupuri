@@ -14,9 +14,18 @@ const testConnection = async () => {
       database: process.env.DB_NAME || "auca_cupuri_portal",
     };
 
-    // Add SSL for PlanetScale (production)
-    if (process.env.DB_HOST && process.env.DB_HOST.includes("psdb.cloud")) {
-      config.ssl = { rejectUnauthorized: true };
+    // Add SSL for PlanetScale or Aiven (production)
+    if (
+      (process.env.DB_HOST && process.env.DB_HOST.includes("psdb.cloud")) ||
+      (process.env.DB_HOST && process.env.DB_HOST.includes("aivencloud.com"))
+    ) {
+      config.ssl = {
+        rejectUnauthorized: true,
+        // For Aiven, we need to handle self-signed certificates
+        ...(process.env.DB_HOST.includes("aivencloud.com") && {
+          rejectUnauthorized: false,
+        }),
+      };
     }
 
     const connection = await mysql.createConnection(config);
@@ -44,9 +53,18 @@ const poolConfig = {
   queueLimit: 0,
 };
 
-// Add SSL for PlanetScale (production)
-if (poolConfig.host.includes("psdb.cloud")) {
-  poolConfig.ssl = { rejectUnauthorized: true };
+// Add SSL for PlanetScale or Aiven (production)
+if (
+  poolConfig.host.includes("psdb.cloud") ||
+  poolConfig.host.includes("aivencloud.com")
+) {
+  poolConfig.ssl = {
+    rejectUnauthorized: true,
+    // For Aiven, we need to handle self-signed certificates
+    ...(poolConfig.host.includes("aivencloud.com") && {
+      rejectUnauthorized: false,
+    }),
+  };
 }
 
 export const pool = mysql.createPool(poolConfig);

@@ -30,7 +30,7 @@ if (!fs.existsSync(uploadsDir)) {
 //} Get allowed origins from environment or use defaults
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
-  : ["http://localhost:5173", "http://localhost:5174"];
+  : ["http://localhost:5173", "http://localhost:5174","https://cupuri-portal.vercel.app"];
 
 // Middlewares
 app.use(
@@ -39,6 +39,8 @@ app.use(
     credentials: true, // Allow credentials (cookies)
   })
 );
+
+
 app.use(cookieParser()); // Parse cookies
 app.use(express.json());
 app.use("/uploads", express.static("uploads")); // serve uploaded files
