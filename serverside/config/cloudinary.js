@@ -5,6 +5,22 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// Validate Cloudinary configuration on startup
+if (
+  !process.env.CLOUDINARY_CLOUD_NAME ||
+  !process.env.CLOUDINARY_API_KEY ||
+  !process.env.CLOUDINARY_API_SECRET
+) {
+  console.error("⚠️  WARNING: Cloudinary credentials not configured!");
+  console.error("Required environment variables:");
+  console.error("  - CLOUDINARY_CLOUD_NAME");
+  console.error("  - CLOUDINARY_API_KEY");
+  console.error("  - CLOUDINARY_API_SECRET");
+  console.error("File uploads will fail without these credentials.");
+} else {
+  console.log("✅ Cloudinary configured successfully");
+}
+
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
