@@ -163,10 +163,25 @@ const BrowseExams = () => {
     }
   };
 
+  // Helper function to check if path is a Cloudinary URL
+  const isCloudinaryUrl = (path) => {
+    return path?.startsWith("http://") || path?.startsWith("https://");
+  };
+
+  // Helper function to get file URL (works for both Cloudinary and local files)
+  const getFileUrl = (filePath) => {
+    if (isCloudinaryUrl(filePath)) {
+      return filePath; // Already a full URL
+    }
+    // Local file - construct URL
+    const uploadsUrl = BASE_URL.replace("/api", "");
+    return `${uploadsUrl}/uploads/${filePath}`;
+  };
+
   const handleDownload = async (exam) => {
     try {
-      const uploadsUrl = BASE_URL.replace("/api", "");
-      const response = await fetch(`${uploadsUrl}/uploads/${exam.filePath}`, {
+      const fileUrl = getFileUrl(exam.filePath);
+      const response = await fetch(fileUrl, {
         credentials: "include",
       });
 
@@ -580,7 +595,7 @@ const BrowseExams = () => {
               onClick={(e) => e.stopPropagation()}>
               {getFileType(previewExam.filePath) === "pdf" ? (
                 <iframe
-                  src={`${BASE_URL.replace("/api", "")}/uploads/${previewExam.filePath}#toolbar=0`}
+                  src={`${getFileUrl(previewExam.filePath)}#toolbar=0`}
                   className="w-full h-full"
                   title="Exam Preview"
                 />
@@ -589,7 +604,7 @@ const BrowseExams = () => {
                   {getFilePaths(previewExam.filePath).map((path, idx) => (
                     <img
                       key={idx}
-                      src={`${BASE_URL.replace("/api", "")}/uploads/${path}`}
+                      src={getFileUrl(path)}
                       className="w-full rounded-lg shadow-lg"
                       alt="page"
                     />
@@ -598,7 +613,7 @@ const BrowseExams = () => {
               ) : (
                 <div className="flex items-center justify-center h-full">
                   <img
-                    src={`${BASE_URL.replace("/api", "")}/uploads/${previewExam.filePath}`}
+                    src={getFileUrl(previewExam.filePath)}
                     className="max-w-full max-h-full object-contain"
                     alt="Preview"
                   />
