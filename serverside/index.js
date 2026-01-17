@@ -55,6 +55,30 @@ app.get("/", (req, res) => {
   `);
 });
 
+// Health check endpoint - tests database connection
+app.get("/api/health", async (req, res) => {
+  try {
+    // Test database connection
+    const { pool } = await import("./config/db.js");
+    await pool.query("SELECT 1");
+    
+    res.status(200).json({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      database: "connected",
+      uptime: process.uptime(),
+    });
+  } catch (error) {
+    console.error("Health check failed:", error);
+    res.status(503).json({
+      status: "unhealthy",
+      timestamp: new Date().toISOString(),
+      database: "disconnected",
+      error: error.message,
+    });
+  }
+});
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/faculties", facultyRoutes);
