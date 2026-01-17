@@ -3,7 +3,7 @@
 > A full-stack web application that revolutionizes how students access and share academic resources at AUCA (Adventist University of Central Africa).
 
 [![Live Demo](https://img.shields.io/badge/demo-live-success?style=for-the-badge)](https://cupuri-portal.vercel.app)
-[![Backend API](https://img.shields.io/badge/API-active-blue?style=for-the-badge)](https://cupuri-backend.onrender.com)
+
 
 ---
 
