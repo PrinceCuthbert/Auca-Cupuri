@@ -22,6 +22,9 @@ const BASE_URL = import.meta.env.VITE_BASE_URL;
 const BrowseExams = () => {
   const { exams, faculties, courses, loading, refreshExams } = useApp();
   const { user } = useAuth();
+  
+  // Debug log: PDF Fix Verified
+  console.log("BrowseExams Component Loaded - with PDF Fix v3");
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFaculty, setSelectedFaculty] = useState("All Faculties");
