@@ -171,6 +171,10 @@ const BrowseExams = () => {
   // Helper function to get file URL (works for both Cloudinary and local files)
   const getFileUrl = (filePath) => {
     if (isCloudinaryUrl(filePath)) {
+      // Fix Cloudinary PDF URLs - they should use /raw/ not /image/
+      if (filePath.includes('.pdf') && filePath.includes('/image/upload/')) {
+        return filePath.replace('/image/upload/', '/raw/upload/');
+      }
       return filePath; // Already a full URL
     }
     // Local file - construct URL
@@ -181,9 +185,12 @@ const BrowseExams = () => {
   const handleDownload = async (exam) => {
     try {
       const fileUrl = getFileUrl(exam.filePath);
-      const response = await fetch(fileUrl, {
-        credentials: "include",
-      });
+      
+      // Don't send credentials to Cloudinary (causes CORS issues)
+      const isCloudinary = isCloudinaryUrl(exam.filePath);
+      const fetchOptions = isCloudinary ? {} : { credentials: "include" };
+      
+      const response = await fetch(fileUrl, fetchOptions);
 
       if (!response.ok) throw new Error("Download failed");
 
@@ -196,7 +203,8 @@ const BrowseExams = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch {
+    } catch (error) {
+      console.error("Download error:", error);
       alert("Download failed. Please try again.");
     }
   };
