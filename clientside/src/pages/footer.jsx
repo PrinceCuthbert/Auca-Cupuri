@@ -60,7 +60,7 @@ function Footer() {
             ) : (
               <>
                 <li className="text-left hover:text-white transition-colors">
-                  <Link to="/cupuriportal/home">Home</Link>
+                  <Link to="/cupuriportal">Home</Link>
                 </li>
                 <li className="text-left hover:text-white transition-colors">
                   <Link to="/cupuriportal/login">Login</Link>
