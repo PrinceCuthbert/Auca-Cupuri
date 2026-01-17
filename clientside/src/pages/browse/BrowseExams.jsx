@@ -24,7 +24,7 @@ const BrowseExams = () => {
   const { user } = useAuth();
   
   // Debug log: PDF Fix Verified
-  console.log("BrowseExams Component Loaded - with PDF Fix v3");
+  console.log("BrowseExams Component Loaded - with PDF Fix v4");
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFaculty, setSelectedFaculty] = useState("All Faculties");
@@ -174,11 +174,7 @@ const BrowseExams = () => {
   // Helper function to get file URL (works for both Cloudinary and local files)
   const getFileUrl = (filePath) => {
     if (isCloudinaryUrl(filePath)) {
-      // Fix Cloudinary PDF URLs - they should use /raw/ not /image/
-      if (filePath.includes('.pdf') && filePath.includes('/image/upload/')) {
-        return filePath.replace('/image/upload/', '/raw/upload/');
-      }
-      return filePath; // Already a full URL
+      return filePath; // Use the URL exactly as stored in Cloudinary/DB
     }
     // Local file - construct URL
     const uploadsUrl = BASE_URL.replace("/api", "");
