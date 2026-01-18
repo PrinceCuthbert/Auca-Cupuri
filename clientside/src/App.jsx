@@ -9,7 +9,9 @@ import UploadForm from "./pages/form/uploadForm";
 import BrowseExams from "./pages/browse/BrowseExams";
 import AdminReviews from "./pages/admin/AdminReviews";
 import StudentReviews from "./pages/student/StudentReviews";
+import OfflineHandler from "./components/OfflineHandler";
 import Header from "./pages/header/header";
+import NotFound from "./pages/NotFound";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 
@@ -17,7 +19,7 @@ import "./App.css";
 
 function App() {
   return (
-    <>
+    <OfflineHandler>
       <ToastContainer position="top-right" autoClose={2000} />
       <Router>
         <Header />
@@ -26,22 +28,23 @@ function App() {
           {/* Public */}
           <Route path="/" element={<Home />} />
 
-          <Route path="/cupuriportal">
-            <Route path="login" element={<Login />} />
-            <Route path="signup" element={<SignUp />} />
+          <Route path="/cupuriportal/login" element={<Login />} />
+          <Route path="/cupuriportal/signup" element={<SignUp />} />
 
-            {/* 🔐 Protected section */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="dashboard/upload" element={<UploadForm />} />
-              <Route path="dashboard/browse" element={<BrowseExams />} />
-              <Route path="dashboard/reviews" element={<AdminReviews />} />
-              <Route path="reviews" element={<StudentReviews />} />
-            </Route>
+          {/* 🔐 Protected section */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/cupuriportal/dashboard" element={<Dashboard />} />
+            <Route path="/cupuriportal/dashboard/upload" element={<UploadForm />} />
+            <Route path="/cupuriportal/dashboard/browse" element={<BrowseExams />} />
+            <Route path="/cupuriportal/dashboard/reviews" element={<AdminReviews />} />
+            <Route path="/cupuriportal/reviews" element={<StudentReviews />} />
           </Route>
+
+          {/* Catch all - 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
-    </>
+    </OfflineHandler>
   );
 }
 
