@@ -118,14 +118,6 @@ const BrowseExams = () => {
       setPreviewExam(exam);
       setPdfPage(1); // Reset to page 1
       setShowPreview(true);
-      if (!DEBUG_MODE) {
-        document.body.style.overflow = "hidden";
-        document.addEventListener("contextmenu", preventDefault);
-        document.addEventListener("selectstart", preventDefault);
-        document.addEventListener("dragstart", preventDefault);
-        document.addEventListener("keydown", preventScreenshot);
-        document.addEventListener("keydown", preventDevTools);
-      }
     } catch (err) {
       console.error("Error Previewing Exam:", err);
       toast.error("Failed to preview exam. Please try again.", {
@@ -137,15 +129,31 @@ const BrowseExams = () => {
   const handleClosePreview = () => {
     setShowPreview(false);
     setPreviewExam(null);
-    if (!DEBUG_MODE) {
-      document.body.style.overflow = "auto";
+  };
+
+  // Effect to handle body scroll locking and event listeners for screenshot protection
+  useEffect(() => {
+    if (showPreview && !DEBUG_MODE) {
+      document.body.style.overflow = "hidden";
+      document.addEventListener("contextmenu", preventDefault);
+      document.addEventListener("selectstart", preventDefault);
+      document.addEventListener("dragstart", preventDefault);
+      document.addEventListener("keydown", preventScreenshot);
+      document.addEventListener("keydown", preventDevTools);
+    } else {
+      document.body.style.overflow = ""; // Revert to default
+    }
+
+    // Cleanup function runs on unmount or when showPreview changes
+    return () => {
+      document.body.style.overflow = ""; // Ensure scroll is restored
       document.removeEventListener("contextmenu", preventDefault);
       document.removeEventListener("selectstart", preventDefault);
       document.removeEventListener("dragstart", preventDefault);
       document.removeEventListener("keydown", preventScreenshot);
       document.removeEventListener("keydown", preventDevTools);
-    }
-  };
+    };
+  }, [showPreview]);
 
   const preventDefault = (e) => {
     if (e.type === "contextmenu" && (e.ctrlKey || e.shiftKey)) {
