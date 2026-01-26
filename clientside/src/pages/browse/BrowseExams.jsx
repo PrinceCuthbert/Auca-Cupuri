@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
@@ -22,9 +23,9 @@ const BASE_URL = import.meta.env.VITE_BASE_URL;
 const BrowseExams = () => {
   const { exams, faculties, courses, loading, refreshExams } = useApp();
   const { user } = useAuth();
-  
+
   // Debug log: PDF Fix Verified
-  console.log("BrowseExams Component Loaded - with PDF Fix v4");
+  // console.log("BrowseExams Component Loaded - with PDF Fix v4");
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFaculty, setSelectedFaculty] = useState("All Faculties");
@@ -40,6 +41,12 @@ const BrowseExams = () => {
     success: true,
     message: "",
   });
+
+  // PDF Preview State
+  const [pdfPage, setPdfPage] = useState(1);
+
+  // State for maximum pages in PDF preview
+  const [maxPages, setMaxPages] = useState(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -59,14 +66,14 @@ const BrowseExams = () => {
           (exam) =>
             exam.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             exam.course?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            exam.faculty?.toLowerCase().includes(searchTerm.toLowerCase())
+            exam.faculty?.toLowerCase().includes(searchTerm.toLowerCase()),
         );
       }
 
       // Filter by faculty
       if (selectedFaculty !== "All Faculties") {
         tempExams = tempExams.filter(
-          (exam) => exam.faculty === selectedFaculty
+          (exam) => exam.faculty === selectedFaculty,
         );
       }
 
@@ -78,7 +85,7 @@ const BrowseExams = () => {
       // Filter by exam type
       if (selectedExamType !== "All Types") {
         tempExams = tempExams.filter(
-          (exam) => exam.examType === selectedExamType
+          (exam) => exam.examType === selectedExamType,
         );
       }
 
@@ -107,15 +114,23 @@ const BrowseExams = () => {
   ];
 
   const handlePreview = (exam) => {
-    setPreviewExam(exam);
-    setShowPreview(true);
-    if (!DEBUG_MODE) {
-      document.body.style.overflow = "hidden";
-      document.addEventListener("contextmenu", preventDefault);
-      document.addEventListener("selectstart", preventDefault);
-      document.addEventListener("dragstart", preventDefault);
-      document.addEventListener("keydown", preventScreenshot);
-      document.addEventListener("keydown", preventDevTools);
+    try {
+      setPreviewExam(exam);
+      setPdfPage(1); // Reset to page 1
+      setShowPreview(true);
+      if (!DEBUG_MODE) {
+        document.body.style.overflow = "hidden";
+        document.addEventListener("contextmenu", preventDefault);
+        document.addEventListener("selectstart", preventDefault);
+        document.addEventListener("dragstart", preventDefault);
+        document.addEventListener("keydown", preventScreenshot);
+        document.addEventListener("keydown", preventDevTools);
+      }
+    } catch (err) {
+      console.error("Error Previewing Exam:", err);
+      toast.error("Failed to preview exam. Please try again.", {
+        position: "top-center",
+      });
     }
   };
 
@@ -171,6 +186,32 @@ const BrowseExams = () => {
     return path?.startsWith("http://") || path?.startsWith("https://");
   };
 
+  // Helper to convert PDF URL to Image URL for specific page
+  const getCloudinaryPageUrl = (url, page = 1) => {
+    if (!url || !isCloudinaryUrl(url)) return url;
+
+    try {
+      // Find the 'upload/' segment and insert '/pg_{page}' after it
+      // Also replace .pdf with .jpg at the end
+      const parts = url.split("/upload/");
+      if (parts.length !== 2) return url;
+
+      const baseUrl = parts[0] + "/upload";
+      const rest = parts[1];
+
+      // Inject page parameter
+      const pageParam = `pg_${page}`;
+
+      // Replace extension
+      const imagePath = rest.replace(".pdf", ".jpg");
+
+      return `${baseUrl}/${pageParam}/${imagePath}`;
+    } catch (e) {
+      console.error("Error transforming URL:", e);
+      return url;
+    }
+  };
+
   // Helper function to get file URL (works for both Cloudinary and local files)
   const getFileUrl = (filePath) => {
     if (isCloudinaryUrl(filePath)) {
@@ -183,28 +224,88 @@ const BrowseExams = () => {
 
   const handleDownload = async (exam) => {
     try {
-      const fileUrl = getFileUrl(exam.filePath);
-      
-      // Don't send credentials to Cloudinary (causes CORS issues)
-      const isCloudinary = isCloudinaryUrl(exam.filePath);
-      const fetchOptions = isCloudinary ? {} : { credentials: "include" };
-      
-      const response = await fetch(fileUrl, fetchOptions);
+      // Determine file path (handle array/single)
+      let actualFilePath = exam.filePath;
+      try {
+           const parsed = JSON.parse(exam.filePath);
+           if (Array.isArray(parsed) && parsed.length > 0) {
+               actualFilePath = parsed[0];
+           }
+      } catch (e) {
+          // Not valid JSON, assume single file string
+      }
 
-      if (!response.ok) throw new Error("Download failed");
+      // Extract extension dynamically for scalability
+      const extension = actualFilePath.split(".").pop().toLowerCase();
+      const fileName = exam.title
+        ? `${exam.title}.${extension}`
+        : `document.${extension}`;
 
+      // Check if it's a Cloudinary PDF and block download
+      if (isCloudinaryUrl(actualFilePath) && extension === 'pdf') {
+          toast.info(
+            "PDF downloads coming soon! 🚀\nPlease use Preview for now.",
+            { position: "top-center", autoClose: 4000 }
+          );
+          return;
+      }
+
+      // Use the new backend proxy endpoint for ALL downloads
+      // This solves Cloudinary CORS/401 issues and works for local files too
+      const downloadUrl = `${BASE_URL}/exams/download/${exam.id}`;
+
+      // Always send credentials because the backend endpoint is protected
+      const response = await fetch(downloadUrl, { credentials: "include" });
+
+      if (!response.ok) {
+        if (response.status === 404)
+          throw new Error("File not found on the server.");
+        if (response.status === 401)
+            throw new Error("Unauthorized access.");
+        throw new Error("Download failed. Please try again.");
+      }
+
+      // Check content type to distinguish between JSON URL and Blob stream
+      const contentType = response.headers.get("content-type");
+      
+      if (contentType && contentType.includes("application/json")) {
+          // Backend returned a JSON with signed URL (Cloudinary)
+          const data = await response.json();
+          if (data.downloadUrl) {
+              const link = document.createElement("a");
+              link.href = data.downloadUrl;
+              link.setAttribute("download", fileName); 
+              // Direct external link, let browser handle it. 
+              // Usually sets target _blank to avoid staying on JSON page if something fails, 
+              // but for download href it's fine.
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              toast.success("Download started!");
+              return;
+          }
+      }
+
+      // Fallback: Local file/Blob stream
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = exam.filePath?.split("/").pop() || "exam.pdf";
+      
+      // Use the filename from the Content-Disposition header if available, otherwise fallback
+      // const contentDisposition = response.headers.get('Content-Disposition');
+      // Logic removed as fileName is reliably determined frontend-side now.
+
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      
+      toast.success("Download started!");
     } catch (error) {
       console.error("Download error:", error);
-      alert("Download failed. Please try again.");
+      toast.error(error.message || "Download failed.");
     }
   };
 
@@ -462,8 +563,8 @@ const BrowseExams = () => {
                           exam.examType === "Final"
                             ? "bg-red-50 text-red-600 border border-red-100"
                             : exam.examType === "Mid-Term"
-                            ? "bg-blue-50 text-blue-600 border border-blue-100"
-                            : "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                              ? "bg-blue-50 text-blue-600 border border-blue-100"
+                              : "bg-emerald-50 text-emerald-600 border border-emerald-100"
                         }`}>
                         {exam.examType}
                       </span>
@@ -554,7 +655,7 @@ const BrowseExams = () => {
                     }`}>
                     {page}
                   </button>
-                )
+                ),
               )}
             </div>
             <button
@@ -601,11 +702,38 @@ const BrowseExams = () => {
               className="flex-1 w-full max-w-5xl rounded-2xl overflow-hidden bg-slate-800 shadow-2xl"
               onClick={(e) => e.stopPropagation()}>
               {getFileType(previewExam.filePath) === "pdf" ? (
-                <iframe
-                  src={`${getFileUrl(previewExam.filePath)}#toolbar=0`}
-                  className="w-full h-full"
-                  title="Exam Preview"
-                />
+                <div className="w-full h-full flex flex-col">
+                  <div className="flex-1 overflow-auto p-4 flex justify-center bg-slate-900/50">
+                    <img
+                      src={getCloudinaryPageUrl(previewExam.filePath, pdfPage)}
+                      className="max-w-full shadow-lg rounded-sm object-contain"
+                      alt={`Page ${pdfPage}`}
+                      onError={(e) => {
+                        if (pdfPage > 1) {
+                          const lastValidPage = pdfPage - 1;
+                          setMaxPages(lastValidPage); // Mark this as the end
+                          setPdfPage(lastValidPage); // Move back to the last good page
+                          toast.info("End of document reached");
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="bg-slate-900 p-4 flex items-center justify-center gap-4 text-white z-20">
+                    <button
+                      onClick={() => setPdfPage((p) => Math.max(1, p - 1))}
+                      disabled={pdfPage === 1}
+                      className="px-3 py-1 bg-slate-700 rounded disabled:opacity-50 hover:bg-slate-600 transition">
+                      Previous
+                    </button>
+                    <span className="font-mono font-bold">Page {pdfPage}</span>
+                    <button
+                      onClick={() => setPdfPage((p) => p + 1)}
+                      className="px-3 py-1 bg-[#008767] rounded hover:bg-[#006d53] transition"
+                      disabled={maxPages !== null && pdfPage >= maxPages}>
+                      Next
+                    </button>
+                  </div>
+                </div>
               ) : getFileType(previewExam.filePath) === "multi-image" ? (
                 <div className="w-full h-full overflow-y-auto p-4 space-y-4">
                   {getFilePaths(previewExam.filePath).map((path, idx) => (

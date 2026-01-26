@@ -51,6 +51,10 @@ const poolConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  // Timeout settings to prevent infinite hangs
+  connectTimeout: 10000, // 10 seconds to establish connection
+  acquireTimeout: 10000, // 10 seconds to acquire connection from pool
+  timeout: 10000, // 10 seconds for query execution
 };
 
 // Add SSL for PlanetScale or Aiven (production)

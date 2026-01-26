@@ -1,9 +1,6 @@
 // config/cloudinary.js
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 // Validate Cloudinary configuration on startup
 if (

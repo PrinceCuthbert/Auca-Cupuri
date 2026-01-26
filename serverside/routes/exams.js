@@ -8,6 +8,7 @@ import {
   updateExam,
   deleteExam,
   uploadExam,
+  downloadExam,
 } from "../controllers/examController.js";
 import { verifyToken } from "../middlewares/auth.js";
 import { permit } from "../middlewares/roles.js";
@@ -23,6 +24,7 @@ const upload = multer({
 });
 
 router.get("/", verifyToken, getExams);
+router.get("/download/:id", verifyToken, downloadExam); // Proxy Download Route
 router.get("/:id", verifyToken, getExamById);
 router.post("/", verifyToken, permit("admin"), createExam);
 router.post(

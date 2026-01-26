@@ -20,7 +20,32 @@ University students at AUCA faced significant challenges:
 
 ---
 
-## 💡 The Solution
+## 🆕 Recent Updates & Roadmap (Jan 26, 2026)
+
+We have implemented critical stability fixes and download handling improvements.
+
+### ✅ What We Fixed
+1.  **Backend Secure Proxy for Downloads**
+    *   **Problem**: Direct downloads from Cloudinary were blocked by CORS policies and 401 Unauthorized errors for PDF assets.
+    *   **Solution**: Implemented a `downloadExam` controller in the backend (`serverside`) that acts as a secure proxy.
+    *   **Technical Detail**: The backend now generates a **Signed URL** using the Cloudinary SDK (verifying the signature server-side) and returns it to the client, bypassing browser-side restrictions.
+
+2.  **Smart PDF Handling ("Preview Only" Mode)**
+    *   **Problem**: Even with signed URLs, Cloudinary's strict access policies for certain PDF asset types ("raw" vs "image") caused broken redirects.
+    *   **Solution**: Implemented a frontend interceptor in `BrowseExams.jsx`.
+    *   **User Experience**: Instead of a broken download, users trying to download Cloudinary PDFs now see a helpful toast notification: *"PDF downloads coming soon! � Please use Preview for now."*
+    *   **Note**: Image downloads (.jpg, .png) and local file downloads continue to work perfectly.
+
+3.  **Multi-File Extension Fix**
+    *   **Problem**: Exams with multiple files (stored as JSON arrays in DB) were downloading with corrupted extensions like `.jpg_]`.
+    *   **Solution**: Updated frontend logic to parse the file path string as JSON first, extracting the correct extension from the first filename in the array.
+
+### 🔮 Future Extensions
+- [ ] **Full PDF Download Support**: Implement a dedicated "delivery" pipeline for Cloudinary PDFs to allow direct downloads (bypassing the current "Preview Only" restriction).
+- [ ] **Multi-File Zipping**: Allow downloading multiple file attachments as a single `.zip` archive.
+- [ ] **Mobile App**: Native mobile experience using React Native.
+
+---
 
 Cupuri Portal is a comprehensive digital platform that:
 - ✅ Centralizes all past examination papers in one searchable database

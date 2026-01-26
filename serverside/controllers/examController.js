@@ -1,12 +1,13 @@
 import { pool } from "../config/db.js";
 import fs from "fs";
 import path from "path";
+import cloudinary from "../config/cloudinary.js"; // Import Cloudinary
 
 // GET all exams
 export const getExams = async (req, res, next) => {
   try {
     const [rows] = await pool.query("SELECT * FROM exams");
-    console.log("🔍 Backend - Returning exams:", rows);
+    // console.log("🔍 Backend - Returning exams:", rows);
     res.json(rows);
   } catch (err) {
     next(err);
@@ -32,7 +33,7 @@ export const createExam = async (req, res, next) => {
     const { title, course_id, date } = req.body;
     await pool.query(
       "INSERT INTO exams (title, course_id, date) VALUES (?, ?, ?)",
-      [title, course_id, date]
+      [title, course_id, date],
     );
     res.status(201).json({ message: "Exam created" });
   } catch (err) {
@@ -47,7 +48,7 @@ export const updateExam = async (req, res, next) => {
     const { title, course_id, date } = req.body;
     await pool.query(
       "UPDATE exams SET title=?, course_id=?, date=? WHERE id=?",
-      [title, course_id, date, id]
+      [title, course_id, date, id],
     );
     res.json({ message: "Exam updated" });
   } catch (err) {
@@ -112,13 +113,13 @@ export const uploadExam = async (req, res, next) => {
     const { title, faculty, course, examType } = req.body;
     const files = req.files; // Array of files
 
-    console.log("📤 Upload request received:", {
-      title,
-      faculty,
-      course,
-      examType,
-      filesCount: files?.length || 0,
-    });
+    // console.log("📤 Upload request received:", {
+    //   title,
+    //   faculty,
+    //   course,
+    //   examType,
+    //   filesCount: files?.length || 0,
+    // });
 
     // Validate file upload
     if (!files || files.length === 0) {
@@ -169,13 +170,13 @@ export const uploadExam = async (req, res, next) => {
         // Single file - store Cloudinary URL
         filePath = files[0].path; // Cloudinary URL
         totalFileSize = files[0].size;
-        console.log("✅ Single file uploaded:", filePath);
+        // console.log("✅ Single file uploaded:", filePath);
       } else {
         // Multiple files - store as JSON array of Cloudinary URLs
         const fileUrls = files.map((f) => f.path);
         filePath = JSON.stringify(fileUrls);
         totalFileSize = files.reduce((sum, f) => sum + f.size, 0);
-        console.log(`✅ ${files.length} files uploaded`);
+        // console.log(`✅ ${files.length} files uploaded`);
       }
     } catch (fileProcessError) {
       console.error("❌ File processing error:", fileProcessError);
@@ -192,7 +193,7 @@ export const uploadExam = async (req, res, next) => {
     try {
       const [result] = await pool.query(
         "INSERT INTO exams (title, faculty, course, examType, filePath, fileSize, uploadDate) VALUES (?, ?, ?, ?, ?, ?, NOW())",
-        [title, faculty, course, examType, filePath, totalFileSize]
+        [title, faculty, course, examType, filePath, totalFileSize],
       );
 
       console.log("✅ Exam inserted successfully:", result.insertId);
@@ -221,8 +222,7 @@ export const uploadExam = async (req, res, next) => {
 
       if (dbError.code === "ETIMEDOUT" || dbError.code === "ENOTFOUND") {
         return res.status(503).json({
-          message:
-            "Database connection timeout. Please try again in a moment.",
+          message: "Database connection timeout. Please try again in a moment.",
           error:
             process.env.NODE_ENV === "development"
               ? dbError.message
@@ -254,9 +254,7 @@ export const uploadExam = async (req, res, next) => {
       return res.status(500).json({
         message: "Failed to save exam to database.",
         error:
-          process.env.NODE_ENV === "development"
-            ? dbError.message
-            : undefined,
+          process.env.NODE_ENV === "development" ? dbError.message : undefined,
       });
     }
   } catch (err) {
@@ -270,3 +268,85 @@ export const uploadExam = async (req, res, next) => {
   }
 };
 
+// DOWNLOAD exam (Proxy through backend to handle CORS/Auth/Cloudinary)
+export const downloadExam = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.query("SELECT * FROM exams WHERE id=?", [id]);
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Exam not found" });
+    }
+
+    const exam = rows[0];
+    let filePath = exam.filePath;
+    
+    // Handle JSON array (take first file logic)
+    try {
+        const parsed = JSON.parse(filePath);
+        if (Array.isArray(parsed) && parsed.length > 0) filePath = parsed[0];
+    } catch {}
+
+    // Sanitize filename
+    const ext = filePath.split(".").pop().toLowerCase();
+    const safeTitle = exam.title.replace(/[^a-z0-9]/gi, '_');
+    const filename = `${safeTitle}.${ext}`;
+
+    if (filePath.startsWith("http")) { 
+        // Cloudinary: Generate Signed URL using SDK
+        // This handles auth for restricted assets automatically
+        
+        // Generate SIGNED URL for Cloudinary
+        // Return JSON with the signed URL so frontend can handle the redirection/download
+        
+        // Extract public_id: strictly remove version and extension
+        let publicId = '';
+        let version = undefined;
+        
+        const uploadIndex = filePath.indexOf('/upload/');
+        if (uploadIndex === -1) throw new Error("Invalid Cloudinary URL");
+        
+        const pathAfterUpload = filePath.substring(uploadIndex + 8);
+        
+        // Check for version (v followed by digits at start)
+        const versionMatch = pathAfterUpload.match(/^(v\d+)\//);
+        if (versionMatch) {
+            version = versionMatch[1].replace('v', '');
+            publicId = pathAfterUpload.substring(versionMatch[0].length);
+        } else {
+            publicId = pathAfterUpload;
+        }
+        
+        // Remove extension
+        const lastDotIndex = publicId.lastIndexOf('.');
+        if (lastDotIndex !== -1) {
+            publicId = publicId.substring(0, lastDotIndex);
+        }
+        
+        // Remove known version prefixes if they somehow snuck in
+        if (publicId.startsWith("v1/")) publicId = publicId.replace("v1/", "");
+
+        const signedUrl = cloudinary.url(publicId, {
+            resource_type: 'image', // PDFs are images in Cloudinary by default
+            format: ext,            // 'pdf'
+            flags: "attachment",    // Force download
+            sign_url: true,         // Generate signature
+            type: "upload",
+            secure: true,
+            version: version 
+        });
+
+        res.json({ downloadUrl: signedUrl });
+    } else {
+        // Local file logic remains
+        const fullPath = path.join(process.cwd(), "uploads", filePath);
+        if (!fs.existsSync(fullPath)) {
+            return res.status(404).json({ message: "File not found on server" });
+        }
+        res.download(fullPath, filename);
+    }
+  } catch (err) {
+    console.error("Download proxy error:", err);
+    next(err);
+  }
+};
