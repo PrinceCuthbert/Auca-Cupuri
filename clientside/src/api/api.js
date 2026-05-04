@@ -12,6 +12,14 @@ export const UPLOADS_URL = BASE_URL.replace("/api", "");
  * @returns {Promise<any>} - Parsed JSON response
  */
 export const apiRequest = async (endpoint, options = {}) => {
+  // Read the JWT stored by AuthContext on login.
+  // This is the Safari/iOS ITP fix: Safari blocks cross-domain cookies
+  // (SameSite=None from Render → Vercel), so we send the token as a
+  // Bearer header instead. The backend verifyToken middleware already
+  // checks req.cookies.token || req.headers.authorization, so both
+  // paths work — Chrome uses the cookie, Safari uses the header.
+  const storedToken = localStorage.getItem("auca-cupuri-token");
+
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     credentials: "include",
     ...options,
@@ -19,7 +27,8 @@ export const apiRequest = async (endpoint, options = {}) => {
       ...(options.body instanceof FormData
         ? {}
         : { "Content-Type": "application/json" }),
-      ...options.headers,
+      ...(storedToken ? { Authorization: `Bearer ${storedToken}` } : {}),
+      ...options.headers, // allow caller to override if needed
     },
   });
 

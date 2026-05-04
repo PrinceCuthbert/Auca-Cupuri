@@ -15,7 +15,14 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // Token is stored separately so apiRequest can read it without
+  // touching the user object (Safari ITP fix — can't rely on cookies).
+  function loadStoredToken() {
+    return localStorage.getItem("auca-cupuri-token") || null;
+  }
+
   const [user, setUser] = useState(loadStoredUser);
+  const [token, setToken] = useState(loadStoredToken);
 
   // LOGIN
   const login = async (email, password) => {
@@ -34,6 +41,12 @@ export function AuthProvider({ children }) {
       }
 
       localStorage.setItem("auca-cupuri-user", JSON.stringify(data.user));
+      // Store the raw JWT so apiRequest can send it as Authorization: Bearer
+      // This is the Safari/iOS ITP fix — cookies are blocked cross-domain.
+      if (data.token) {
+        localStorage.setItem("auca-cupuri-token", data.token);
+        setToken(data.token);
+      }
       setUser(data.user);
       return data.user;
     } catch (error) {
@@ -76,6 +89,8 @@ export function AuthProvider({ children }) {
       // Silent fail - logout should always clear local state
     }
     localStorage.removeItem("auca-cupuri-user");
+    localStorage.removeItem("auca-cupuri-token");
+    setToken(null);
     setUser(null);
   };
 
@@ -84,7 +99,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, login, register, logout, isAuthenticated }}>
+      value={{ user, token, login, register, logout, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

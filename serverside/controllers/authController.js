@@ -209,8 +209,12 @@ const authController = {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
       });
 
+      // Also return token in body so clients that can't use cross-domain
+      // cookies (Safari/iOS ITP) can store it in localStorage and send it
+      // as an Authorization: Bearer header instead.
       res.json({
         user: { id: user.id, name: user.name, role: user.role },
+        token,
       });
     } catch (err) {
       console.error("Unexpected login error:", err);

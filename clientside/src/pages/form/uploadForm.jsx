@@ -19,7 +19,7 @@ const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 function UploadForm() {
   const navigate = useNavigate();
-  const { refreshExams } = useApp();
+  const { addExam } = useApp();
 
   const [title, setTitle] = useState();
   const [course, setCourse] = useState("");
@@ -170,17 +170,7 @@ function UploadForm() {
         return;
       }
 
-      const res = await fetch(`${BASE_URL}/exams/upload`, {
-        method: "POST",
-        credentials: "include", // Send cookies with request
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to upload exam");
-      }
+      await addExam(formData);
 
       toast.success(
         `Exam uploaded successfully! (${examFiles.length} file${
@@ -188,9 +178,6 @@ function UploadForm() {
         })`
       );
       setSuccess(true);
-
-      // Refresh exams in context so browse page updates immediately
-      await refreshExams();
 
       // Redirect after success
       setTimeout(() => {

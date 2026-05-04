@@ -2,6 +2,12 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { BASE_URL } from "../api/api";
 import { useAuth } from "./AuthContext";
 
+// Helper: read token for Safari ITP fix (Bearer header fallback)
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("auca-cupuri-token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 const AppContext = createContext();
 
 export const useApp = () => {
@@ -31,9 +37,9 @@ export const AppProvider = ({ children }) => {
 
       try {
         const [facRes, courseRes, examRes] = await Promise.all([
-          fetch(`${BASE_URL}/faculties`, { credentials: "include" }),
-          fetch(`${BASE_URL}/courses`, { credentials: "include" }),
-          fetch(`${BASE_URL}/exams`, { credentials: "include" }),
+          fetch(`${BASE_URL}/faculties`, { credentials: "include", headers: getAuthHeaders() }),
+          fetch(`${BASE_URL}/courses`,   { credentials: "include", headers: getAuthHeaders() }),
+          fetch(`${BASE_URL}/exams`,     { credentials: "include", headers: getAuthHeaders() }),
         ]);
 
         if (!facRes.ok || !courseRes.ok || !examRes.ok) {
@@ -63,16 +69,18 @@ export const AppProvider = ({ children }) => {
     const res = await fetch(`${BASE_URL}/exams/upload`, {
       method: "POST",
       credentials: "include",
+      headers: getAuthHeaders(),
       body: formData,
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      throw new Error("Failed to upload exam");
+      throw new Error(data.message || "Failed to upload exam");
     }
 
-    const newExam = await res.json();
-    setExams((prev) => [...prev, newExam]);
-    return newExam;
+    setExams((prev) => [...prev, data]);
+    return data;
   };
 
   const getCoursesByFaculty = (facultyIdOrName) =>
@@ -86,6 +94,7 @@ export const AppProvider = ({ children }) => {
     try {
       const examRes = await fetch(`${BASE_URL}/exams`, {
         credentials: "include",
+        headers: getAuthHeaders(),
       });
       if (!examRes.ok) throw new Error("Failed to refresh exams");
       const examData = await examRes.json();
