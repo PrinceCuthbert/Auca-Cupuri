@@ -12,10 +12,24 @@ const authController = {
   // REGISTER USER
   async register(req, res, next) {
     try {
-      const { name, email, password, role } = req.body;
+      const { name, email, password } = req.body;
 
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password required" });
+      }
+
+      // Strong Password Policy: 
+      // - Min 8 characters
+      // - At least one uppercase letter
+      // - At least one lowercase letter
+      // - At least one number
+      // - At least one special character (!@#$%^&*)
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      
+      if (!passwordRegex.test(password)) {
+        return res.status(400).json({ 
+          message: "Password is too weak! It must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character (e.g., @$!%*?&)." 
+        });
       }
 
       // Check if user exists with detailed error handling
@@ -81,10 +95,12 @@ const authController = {
       }
 
       // Insert user with error handling
+
+      const defaultRole = "student";
       try {
         await pool.query(
           "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
-          [name, email, hashedPassword, role || "student"]
+          [name, email, hashedPassword, defaultRole]
         );
       } catch (insertError) {
         console.error("User insertion error:", insertError);
@@ -191,7 +207,7 @@ const authController = {
       let token;
       try {
         token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
-          expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+          expiresIn: process.env.JWT_EXPIRES_IN || "3d",
         });
       } catch (jwtError) {
         console.error("JWT generation error:", jwtError);
@@ -211,9 +227,16 @@ const authController = {
 
       // Also return token in body so clients that can't use cross-domain
       // cookies (Safari/iOS ITP) can store it in localStorage and send it
+
       // as an Authorization: Bearer header instead.
       res.json({
-        user: { id: user.id, name: user.name, role: user.role },
+
+        // this was the user data ent in local storage part and it exposed vulnerable data so that attackers could easily access admin privileges
+        // This is the issue found by Cyusa, where a user was easily changing the user role in local storage and gaining admin access. So, 
+        // I have to remove role and id, to only send name
+        
+        // user: { id: user.id, name: user.name, role: user.role },
+        user: { name: user.name },
         token,
       });
     } catch (err) {
@@ -235,6 +258,38 @@ const authController = {
       sameSite: "none",
     });
     res.json({ message: "Logged out successfully" });
+  },
+
+  // GET ALL USERS (Admin only)
+  async getAllUsers(req, res) {
+    try {
+      // 🚀 Use the correct database column name (created_at) and alias it for the frontend
+      const [users] = await pool.query(
+        "SELECT id, name, email, role, created_at AS createdAt FROM users ORDER BY created_at DESC"
+      );
+      res.json(users);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  },
+
+  // DELETE USER (Admin only)
+  async deleteUser(req, res) {
+    try {
+      const { id } = req.params;
+      
+      // 🛡️ Safety: Don't let the logged-in admin delete themselves!
+      if (parseInt(id) === req.user.id) {
+        return res.status(400).json({ message: "Security Block: You cannot delete your own admin account." });
+      }
+
+      await pool.query("DELETE FROM users WHERE id = ?", [id]);
+      res.json({ message: "User deleted successfully" });
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
   },
 };
 

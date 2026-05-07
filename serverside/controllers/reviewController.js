@@ -3,7 +3,15 @@ import { pool } from "../config/db.js";
 // GET all reviews (for admin)
 export const getAllReviews = async (req, res, next) => {
   try {
-    const [rows] = await pool.query(`
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const [countResult] = await pool.query("SELECT COUNT(*) as total FROM reviews");
+    const totalReviews = countResult[0].total;
+
+    const [rows] = await pool.query(
+      `
       SELECT 
         r.*,
         u.name as user_name,
@@ -19,8 +27,20 @@ export const getAllReviews = async (req, res, next) => {
       LEFT JOIN admin_responses ar ON r.id = ar.review_id
       LEFT JOIN users admin ON ar.admin_id = admin.id
       ORDER BY r.created_at DESC
-    `);
-    res.json(rows);
+      LIMIT ? OFFSET ?
+    `,
+      [limit, offset]
+    );
+
+    res.json({
+      reviews: rows,
+      pagination: {
+        totalReviews,
+        totalPages: Math.ceil(totalReviews / limit),
+        currentPage: page,
+        limit,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -30,6 +50,16 @@ export const getAllReviews = async (req, res, next) => {
 export const getExamReviews = async (req, res, next) => {
   try {
     const { examId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const [countResult] = await pool.query(
+      "SELECT COUNT(*) as total FROM reviews WHERE exam_id = ?",
+      [examId]
+    );
+    const totalReviews = countResult[0].total;
+
     const [rows] = await pool.query(
       `
       SELECT 
@@ -39,10 +69,20 @@ export const getExamReviews = async (req, res, next) => {
       JOIN users u ON r.user_id = u.id
       WHERE r.exam_id = ?
       ORDER BY r.created_at DESC
+      LIMIT ? OFFSET ?
     `,
-      [examId]
+      [examId, limit, offset]
     );
-    res.json(rows);
+
+    res.json({
+      reviews: rows,
+      pagination: {
+        totalReviews,
+        totalPages: Math.ceil(totalReviews / limit),
+        currentPage: page,
+        limit,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -225,7 +265,18 @@ export const getExamReviewStats = async (req, res, next) => {
 // GET all general reviews (not exam-specific)
 export const getGeneralReviews = async (req, res, next) => {
   try {
-    const [rows] = await pool.query(`
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // Get Total Count
+    const [countResult] = await pool.query(
+      "SELECT COUNT(*) as total FROM reviews WHERE exam_id IS NULL"
+    );
+    const totalReviews = countResult[0].total;
+
+    const [rows] = await pool.query(
+      `
       SELECT 
         r.*,
         u.name as user_name,
@@ -238,8 +289,20 @@ export const getGeneralReviews = async (req, res, next) => {
       LEFT JOIN users admin ON ar.admin_id = admin.id
       WHERE r.exam_id IS NULL
       ORDER BY r.created_at DESC
-    `);
-    res.json(rows);
+      LIMIT ? OFFSET ?
+    `,
+      [limit, offset]
+    );
+
+    res.json({
+      reviews: rows,
+      pagination: {
+        totalReviews,
+        totalPages: Math.ceil(totalReviews / limit),
+        currentPage: page,
+        limit,
+      },
+    });
   } catch (err) {
     next(err);
   }

@@ -4,13 +4,13 @@ import { GraduationCap } from "lucide-react";
 import { useAuth } from "../../src/context/AuthContext";
 
 function Footer() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, userRole } = useAuth();
 
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-16 text-base text-white bg-gradient-to-r from-gray-900 to-emerald-800 grid grid-rows-[auto_auto] p-8 w-full">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-8">
+    <footer className="mt-8 sm:mt-16 text-base text-white bg-gradient-to-r from-gray-900 to-emerald-800 grid grid-rows-[auto_auto] p-6 sm:p-12 w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-10 sm:gap-y-8">
         {/* Left Section: Logo & Description */}
         <div className="flex flex-col items-start">
           <div className="flex items-center gap-3 mb-4">
@@ -18,28 +18,23 @@ function Footer() {
               <GraduationCap className="text-white w-6 h-6" />
             </div>
             <div className="flex flex-col items-start">
-              <h3 className="text-white text-xl font-bold m-0">AUCA CUPURI</h3>
-              <p className="text-emerald-300 mt-1 text-sm">Past Exams Portal</p>
+              <h3 className="text-white text-xl font-bold m-0 text-left">AUCA CUPURI</h3>
+              <p className="text-emerald-300 mt-0.5 text-xs sm:text-sm">Past Exams Portal</p>
             </div>
           </div>
 
-          <div className="mt-4 mb-4 text-left text-gray-300">
+          <div className="mt-2 mb-4 text-left text-gray-300 text-sm sm:text-base leading-relaxed">
             Empowering AUCA students with comprehensive access to past
-            examination papers across all faculties. Study smarter, achieve
+            examination papers. Study smarter, achieve
             better results.
-          </div>
-
-          <div className="flex gap-4">
-            {/* <div className="w-20 h-12 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-2xl text-white shadow-lg"><span>📚</span></div> */}
-            {/* <div className="w-20 h-12 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-2xl text-white shadow-lg"><span>🎓</span></div> */}
           </div>
         </div>
 
         {/* Center Section: Quick Links */}
         <div className="flex flex-col items-start">
-          <h2 className="text-white font-bold mb-5 text-lg">Quick Links</h2>
+          <h2 className="text-white font-bold mb-4 sm:mb-5 text-lg">Quick Links</h2>
           <ul className="flex flex-col items-start gap-2 text-gray-300 text-sm list-none">
-            {isAuthenticated && user?.role === "admin" ? (
+            {isAuthenticated && userRole === "admin" ? (
               <>
                 <li className="text-left hover:text-white transition-colors">
                   <Link to="/cupuriportal/dashboard/browse">Browse Exams</Link>
@@ -48,7 +43,7 @@ function Footer() {
                   <Link to="/cupuriportal/dashboard">Dashboard</Link>
                 </li>
               </>
-            ) : isAuthenticated && user?.role === "student" ? (
+            ) : isAuthenticated && userRole === "student" ? (
               <>
                 <li className="text-left hover:text-white transition-colors">
                   <Link to="/cupuriportal/dashboard/browse">Browse Exams</Link>
@@ -75,7 +70,7 @@ function Footer() {
 
         {/* Right Section: Faculties */}
         <div className="flex flex-col items-start">
-          <h2 className="text-white font-bold mb-5 text-lg">Faculties</h2>
+          <h2 className="text-white font-bold mb-4 sm:mb-5 text-lg">Faculties</h2>
           <ul className="flex flex-col items-start gap-2 text-gray-300 text-sm list-none">
             <li className="text-left">
               <a className="hover:text-white transition-colors cursor-pointer">
@@ -89,20 +84,20 @@ function Footer() {
             </li>
             <li className="text-left">
               <a className="hover:text-white transition-colors cursor-pointer">
-                Networking & Telecommunications
+                Networking & Telecom
               </a>
             </li>
           </ul>
         </div>
       </div>
 
-      <hr className="my-8 h-px bg-gray-500 border-none" />
+      <hr className="my-6 sm:my-8 h-px bg-gray-500/30 border-none" />
 
-      <div className="flex flex-col justify-center gap-3 text-gray-300 text-sm text-center sm:text-left">
-        <div>© {year} AUCA CUPURI Portal. All rights reserved.</div>
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-gray-400 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-center sm:text-left">
+        <div>© {year} AUCA CUPURI Portal.</div>
         <div>
-          Developed with <span className="text-emerald-400">❤️</span> by{" "}
-          <span className="text-cyan-400">Prince Cuthbert</span>
+          Developed with <span className="text-emerald-500">❤️</span> by{" "}
+          <span className="text-white">Prince Cuthbert</span>
         </div>
       </div>
     </footer>

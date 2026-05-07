@@ -150,6 +150,32 @@ function UploadForm() {
       return;
     }
 
+    const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB limit
+    const ALLOWED_TYPES = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "image/heic",
+      "image/heif"
+    ];
+
+    for (let file of examFiles) {
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`File "${file.name}" exceeds the 20MB limit.`);
+        setLoading(false);
+        return;
+      }
+      
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        toast.error(`File "${file.name}" is not a supported format.`);
+        setLoading(false);
+        return;
+      }
+    }
+
     const formData = new FormData();
     formData.append("title", title);
     formData.append("faculty", faculty);
@@ -170,22 +196,26 @@ function UploadForm() {
         return;
       }
 
-      await addExam(formData);
+      // 🚀 BACKGROUND UPLOAD: Fire the request and don't await it here!
+      // This allows the user to leave the page while Cloudinary does the heavy lifting.
+      const uploadPromise = addExam(formData);
 
-      toast.success(
-        `Exam uploaded successfully! (${examFiles.length} file${
-          examFiles.length > 1 ? "s" : ""
-        })`
-      );
+      toast.promise(uploadPromise, {
+        pending: `Uploading ${examFiles.length} file(s) in the background... You can navigate away!`,
+        success: "Exam uploaded successfully!",
+        error: "Failed to upload exam. Please try again.",
+      });
+
+      // Immediately set success and redirect, unblocking the user
       setSuccess(true);
-
-      // Redirect after success
       setTimeout(() => {
         navigate("/cupuriportal/dashboard");
-      }, 2000);
+      }, 1500);
+
     } catch (error) {
-      toast.error(error.message || "Failed to upload exam");
+      toast.error(error.message || "Failed to start upload");
     } finally {
+      // Remove loading state instantly so the UI isn't stalled
       setLoading(false);
     }
   }
@@ -347,14 +377,14 @@ function UploadForm() {
                         id="uploadFile"
                         name="uploadFile"
                         className="sr-only"
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.heic,.heif"
                         multiple
                       />
                     </label>
                     <p className="pl-1">or drag and drop</p>
                   </div>
                   <p className="text-xs text-gray-500">
-                    PDF, DOC, DOCX, JPG, PNG up to 10MB each
+                    PDF, DOC, DOCX, JPG, PNG, HEIC up to 20MB each
                   </p>
                   <p className="text-xs text-emerald-600 font-medium">
                     💡 Tip: For multi-page exams, select all images at once or

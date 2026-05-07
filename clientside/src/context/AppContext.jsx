@@ -23,47 +23,63 @@ export const AppProvider = ({ children }) => {
 
   const [faculties, setFaculties] = useState([]);
   const [courses, setCourses] = useState([]);
-  const [exams, setExams] = useState([]);
+ 
   const [loading, setLoading] = useState(false);
+ 
 
+// Fetch only constant data (Faculties/Courses) on load
   useEffect(() => {
-    const fetchData = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
+    const fetchStaticData = async () => {
+      if (!user) return;
       setLoading(true);
-
       try {
-        const [facRes, courseRes, examRes] = await Promise.all([
+        const [facRes, courseRes] = await Promise.all([
           fetch(`${BASE_URL}/faculties`, { credentials: "include", headers: getAuthHeaders() }),
-          fetch(`${BASE_URL}/courses`,   { credentials: "include", headers: getAuthHeaders() }),
-          fetch(`${BASE_URL}/exams`,     { credentials: "include", headers: getAuthHeaders() }),
+          fetch(`${BASE_URL}/courses`, { credentials: "include", headers: getAuthHeaders() }),
         ]);
 
-        if (!facRes.ok || !courseRes.ok || !examRes.ok) {
-          throw new Error("Unauthorized or failed fetch");
+        if (facRes.ok && courseRes.ok) {
+          setFaculties(await facRes.json());
+          setCourses(await courseRes.json());
         }
-
-        const [facData, courseData, examData] = await Promise.all([
-          facRes.json(),
-          courseRes.json(),
-          examRes.json(),
-        ]);
-
-        setFaculties(facData);
-        setCourses(courseData);
-        setExams(examData);
-      } catch {
-        // Silent fail - data will be empty
+      } catch (error) {
+        console.error("Static data fetch failed", error);
       } finally {
         setLoading(false);
       }
     };
+    fetchStaticData();
+  }, [user]);
 
-    fetchData();
-  }, [user]); // 👈 refetch when login/logout happens
+  /**
+   * DYNAMIC FETCH: This is the core fix. 
+   * Components will call this with their specific needs (page, search, etc.)
+   */
+  const fetchExams = async (params = {}) => {
+    const { page = 1, limit = 6, search = "", faculty = "All Faculties", course = "All Courses", examType = "All Types" } = params;
+
+    // Build Query String
+    const query = new URLSearchParams({
+      page,
+      limit,
+      search,
+      faculty,
+      course,
+      examType
+    }).toString();
+
+    try {
+      const res = await fetch(`${BASE_URL}/exams?${query}`, {
+        credentials: "include",
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) throw new Error("Failed to fetch exams");
+      return await res.json(); // Returns { exams: [], pagination: {} }
+    } catch (err) {
+      console.error("FetchExams Error:", err);
+      return { exams: [], pagination: { totalPages: 1, currentPage: 1, totalExams: 0 } };
+    }
+  };
 
   const addExam = async (formData) => {
     const res = await fetch(`${BASE_URL}/exams/upload`, {
@@ -79,63 +95,20 @@ export const AppProvider = ({ children }) => {
       throw new Error(data.message || "Failed to upload exam");
     }
 
-    setExams((prev) => [...prev, data]);
     return data;
   };
 
-  const getCoursesByFaculty = (facultyIdOrName) =>
-    courses.filter(
-      (course) =>
-        course.facultyId === facultyIdOrName ||
-        course.faculty === facultyIdOrName
-    );
 
-  const refreshExams = async () => {
-    try {
-      const examRes = await fetch(`${BASE_URL}/exams`, {
-        credentials: "include",
-        headers: getAuthHeaders(),
-      });
-      if (!examRes.ok) throw new Error("Failed to refresh exams");
-      const examData = await examRes.json();
-      setExams(examData);
-    } catch {
-      // Silent fail - keep existing exams data
-    }
-  };
-
-  const getExamsByCourse = (courseId, examType) =>
-    exams.filter(
-      (exam) =>
-        exam.courseId === courseId &&
-        (examType ? exam.examType === examType : true)
-    );
-
-  const searchExams = (query) => {
-    const q = query.toLowerCase();
-    return exams.filter(
-      (exam) =>
-        exam.title.toLowerCase().includes(q) ||
-        courses.find(
-          (course) =>
-            course._id === exam.courseId &&
-            course.title.toLowerCase().includes(q)
-        )
-    );
-  };
+  
 
   return (
     <AppContext.Provider
       value={{
         faculties,
         courses,
-        exams,
         loading,
         addExam,
-        refreshExams,
-        getCoursesByFaculty,
-        getExamsByCourse,
-        searchExams,
+       fetchExams
       }}>
       {children}
     </AppContext.Provider>

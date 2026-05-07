@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 // CSS has been replaced with Tailwind classes
 
 const Header = () => {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -17,6 +17,7 @@ const Header = () => {
 
     const pageTitles = {
       "/": "Past Paper Exams Portal",
+      "/about": "About Us",
       "/cupuriportal/login": "Login",
       "/cupuriportal/signup": "Sign Up",
       "/cupuriportal/dashboard/browse": "Browse",
@@ -156,7 +157,7 @@ const Header = () => {
                   {user.name}
                 </p>
                 <p className="m-0 text-xs font-semibold text-emerald-600 capitalize select-none">
-                  {user.role}
+                  {userRole}
                 </p>
               </div>
             </div>
@@ -242,7 +243,7 @@ const Header = () => {
                     {user.name}
                   </p>
                   <p className="m-0 text-xs font-medium text-emerald-600 capitalize">
-                    {user.role}
+                    {userRole}
                   </p>
                 </div>
               </div>

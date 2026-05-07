@@ -35,6 +35,12 @@ export default function SignUp() {
       return toast.error("Please fill in all fields!");
     }
 
+    // Password Complexity Validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      return toast.error("Password is too weak! Use at least 8 characters, with uppercase, lowercase, a number, and a special character (e.g. @$!%*?&).");
+    }
+
     setLoading(true);
     try {
       console.log("Starting registration process...");
@@ -185,7 +191,6 @@ export default function SignUp() {
           </div>
         </main>
       </div>
-      <Footer />
     </>
   );
 }

@@ -1,14 +1,71 @@
 import { pool } from "../config/db.js";
 import fs from "fs";
 import path from "path";
+import https from "https";
 import cloudinary from "../config/cloudinary.js"; // Import Cloudinary
 
 // GET all exams
+// / GET exams with Pagination and Search
 export const getExams = async (req, res, next) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM exams");
-    // console.log("🔍 Backend - Returning exams:", rows);
-    res.json(rows);
+    // 1. Get query parameters with defaults
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || "";
+    const faculty = req.query.faculty || "All Faculties";
+    const course = req.query.course || "All Courses";
+    const examType = req.query.examType || "All Types";
+
+    const offset = (page - 1) * limit;
+
+    // 2. Build the WHERE clause dynamically for SQL
+    let query = "SELECT * FROM exams WHERE 1=1";
+    let countQuery = "SELECT COUNT(*) as total FROM exams WHERE 1=1";
+    const queryParams = [];
+
+    if (search) {
+      const searchPattern = `%${search}%`;
+      query += " AND (title LIKE ? OR course LIKE ? OR faculty LIKE ?)";
+      countQuery += " AND (title LIKE ? OR course LIKE ? OR faculty LIKE ?)";
+      queryParams.push(searchPattern, searchPattern, searchPattern);
+    }
+
+    if (faculty !== "All Faculties") {
+      query += " AND faculty = ?";
+      countQuery += " AND faculty = ?";
+      queryParams.push(faculty);
+    }
+
+    if (course !== "All Courses") {
+      query += " AND course = ?";
+      countQuery += " AND course = ?";
+      queryParams.push(course);
+    }
+
+    if (examType !== "All Types") {
+      query += " AND examType = ?";
+      countQuery += " AND examType = ?";
+      queryParams.push(examType);
+    }
+
+    // 3. Get Total Count for Frontend Pagination UI
+    const [countResult] = await pool.query(countQuery, queryParams);
+    const totalExams = countResult[0].total;
+
+    // 4. Get Paginated Data
+    query += " ORDER BY uploadDate DESC LIMIT ? OFFSET ?";
+    const [rows] = await pool.query(query, [...queryParams, limit, offset]);
+
+    // 5. Return structured response
+    res.json({
+      exams: rows,
+      pagination: {
+        totalExams,
+        totalPages: Math.ceil(totalExams / limit),
+        currentPage: page,
+        limit
+      }
+    });
   } catch (err) {
     next(err);
   }
@@ -281,62 +338,92 @@ export const downloadExam = async (req, res, next) => {
     const exam = rows[0];
     let filePath = exam.filePath;
     
-    // Handle JSON array (take first file logic)
+    // Handle JSON array vs single string
+    let filePaths = [];
     try {
-        const parsed = JSON.parse(filePath);
-        if (Array.isArray(parsed) && parsed.length > 0) filePath = parsed[0];
-    } catch {}
-
-    // Sanitize filename
-    const ext = filePath.split(".").pop().toLowerCase();
-    const safeTitle = exam.title.replace(/[^a-z0-9]/gi, '_');
-    const filename = `${safeTitle}.${ext}`;
-
-    if (filePath.startsWith("http")) { 
-        // Cloudinary: Generate Signed URL using SDK
-        // This handles auth for restricted assets automatically
-        
-        // Generate SIGNED URL for Cloudinary
-        // Return JSON with the signed URL so frontend can handle the redirection/download
-        
-        // Extract public_id: strictly remove version and extension
-        let publicId = '';
-        let version = undefined;
-        
-        const uploadIndex = filePath.indexOf('/upload/');
-        if (uploadIndex === -1) throw new Error("Invalid Cloudinary URL");
-        
-        const pathAfterUpload = filePath.substring(uploadIndex + 8);
-        
-        // Check for version (v followed by digits at start)
-        const versionMatch = pathAfterUpload.match(/^(v\d+)\//);
-        if (versionMatch) {
-            version = versionMatch[1].replace('v', '');
-            publicId = pathAfterUpload.substring(versionMatch[0].length);
+        const parsed = JSON.parse(exam.filePath);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            filePaths = parsed;
         } else {
-            publicId = pathAfterUpload;
+            filePaths = [exam.filePath];
         }
+    } catch {
+        filePaths = [exam.filePath];
+    }
+
+    if (filePaths[0].startsWith("http")) { 
+        const safeTitle = exam.title.replace(/[^a-z0-9]/gi, '_');
         
-        // Remove extension
-        const lastDotIndex = publicId.lastIndexOf('.');
-        if (lastDotIndex !== -1) {
-            publicId = publicId.substring(0, lastDotIndex);
+        let versionStr = undefined;
+        // Extract public IDs for all files
+        const publicIds = filePaths.map((filePath) => {
+            let publicId = '';
+            const uploadIndex = filePath.indexOf('/upload/');
+            if (uploadIndex === -1) return null;
+            
+            const pathAfterUpload = filePath.substring(uploadIndex + 8);
+            
+            const versionMatch = pathAfterUpload.match(/^(v\d+)\//);
+            if (versionMatch) {
+                publicId = pathAfterUpload.substring(versionMatch[0].length);
+                versionStr = versionMatch[1].replace('v', '');
+            } else {
+                publicId = pathAfterUpload;
+            }
+            
+            const lastDotIndex = publicId.lastIndexOf('.');
+            if (lastDotIndex !== -1) {
+                publicId = publicId.substring(0, lastDotIndex);
+            }
+            
+            if (publicId.startsWith("v1/")) publicId = publicId.replace("v1/", "");
+            return publicId;
+        }).filter(id => id !== null);
+
+        if (publicIds.length === 0) {
+            return res.status(500).json({ message: "Could not generate download URL" });
         }
-        
-        // Remove known version prefixes if they somehow snuck in
-        if (publicId.startsWith("v1/")) publicId = publicId.replace("v1/", "");
 
-        const signedUrl = cloudinary.url(publicId, {
-            resource_type: 'image', // PDFs are images in Cloudinary by default
-            format: ext,            // 'pdf'
-            flags: "attachment",    // Force download
-            sign_url: true,         // Generate signature
-            type: "upload",
-            secure: true,
-            version: version 
-        });
+        if (publicIds.length > 1) {
+            // 🚀 AUTOMATIC ZIP FOR MULTIPLE FILES (Cloudinary side)
+            const zipUrl = cloudinary.utils.download_zip_url({
+                public_ids: publicIds,
+                target_public_id: safeTitle,
+                flatten_folders: true
+            });
+            res.json({ downloadUrl: zipUrl });
+        } else {
+            // 📦 SINGLE FILE DOWNLOAD
+            let ext = filePaths[0].split(".").pop().toLowerCase();
+            if (ext === 'heic' || ext === 'heif') ext = 'jpg';
 
-        res.json({ downloadUrl: signedUrl });
+            const signedUrl = cloudinary.url(publicIds[0], {
+                resource_type: 'image',
+                format: ext,
+                flags: "attachment", // Force download now that it's allowed
+                sign_url: true,
+                type: "upload",
+                secure: true,
+                version: versionStr
+            });
+
+            res.json({ downloadUrl: signedUrl });
+
+            /* 
+            // PREVIOUS BACKEND PROXY LOGIC (Uncomment if Cloudinary blocks PDFs again)
+            https.get(signedFetchUrl, (streamRes) => {
+                if (streamRes.statusCode !== 200) {
+                    return res.status(streamRes.statusCode).json({ message: "Error fetching file from cloud" });
+                }
+                res.setHeader('Content-Type', streamRes.headers['content-type'] || 'application/octet-stream');
+                res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}.${ext}"`);
+                streamRes.pipe(res);
+            }).on('error', (err) => {
+                console.error("Backend Proxy Stream Error:", err);
+                res.status(500).json({ message: "Failed to download file" });
+            });
+            */
+        }
     } else {
         // Local file logic remains
         const fullPath = path.join(process.cwd(), "uploads", filePath);

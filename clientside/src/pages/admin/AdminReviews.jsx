@@ -21,7 +21,7 @@ import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 
 const AdminReviews = () => {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
@@ -33,7 +33,7 @@ const AdminReviews = () => {
   const [responseText, setResponseText] = useState("");
 
   useEffect(() => {
-    if (user?.role === "admin") {
+    if (userRole === "admin") {
       fetchReviews();
     }
   }, [user]);
@@ -49,7 +49,8 @@ const AdminReviews = () => {
       }
 
       const data = await response.json();
-      setReviews(data);
+      // Handle both old array format and new paginated object format
+      setReviews(Array.isArray(data) ? data : data.reviews || []);
     } catch {
       // Silent fail - reviews will be empty
     } finally {
@@ -256,7 +257,7 @@ const AdminReviews = () => {
     );
   }
 
-  if (user?.role !== "admin") {
+  if (userRole !== "admin") {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="bg-white rounded-2xl shadow-lg p-12 text-center max-w-md">

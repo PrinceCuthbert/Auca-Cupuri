@@ -55,7 +55,7 @@ ChartJS.register(
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const navigate = useNavigate();
   const visitorChartRef = useRef(null);
   const hasLoggedVisit = useRef(false);
@@ -76,6 +76,7 @@ const Dashboard = () => {
       unique_today: 0,
     },
   });
+  const [totalUsers, setTotalUsers] = useState(0);
   const [visitorRange, setVisitorRange] = useState("month");
   const [chartData, setChartData] = useState({
     studyFocus: {
@@ -86,7 +87,7 @@ const Dashboard = () => {
 
   // Fetch visitor statistics (admin only)
   const fetchVisitorStats = async (range = "month") => {
-    if (user?.role !== "admin") return;
+    if (userRole !== "admin") return;
 
     try {
       const res = await fetch(`${BASE_URL}/visits/stats?range=${range}`, {
@@ -98,6 +99,22 @@ const Dashboard = () => {
       }
     } catch {
       // Silent fail - stats are optional
+    }
+  };
+
+  // Fetch total users count (admin only)
+  const fetchTotalUsers = async () => {
+    if (userRole !== "admin") return;
+    try {
+      const res = await fetch(`${BASE_URL}/auth/users`, {
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTotalUsers(data.length);
+      }
+    } catch {
+      // Silent fail
     }
   };
 
@@ -134,19 +151,24 @@ const Dashboard = () => {
         }
 
         const data = await res.json();
-        setExams(data);
-        generateChartData(data);
+        // Handle both old array format and new paginated object format
+        const examsList = Array.isArray(data) ? data : data.exams || [];
+        setExams(examsList);
+        generateChartData(examsList);
       } catch {
         // Silent fail - exams will be empty
       }
     };
 
     fetchExams();
-  }, [user]);
+    if (userRole === "admin") {
+        fetchTotalUsers();
+    }
+  }, [user, userRole]);
 
   // Fetch visitor stats when range changes (admin only)
   useEffect(() => {
-    if (user?.role === "admin") {
+    if (userRole === "admin") {
       fetchVisitorStats(visitorRange);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -467,7 +489,7 @@ const Dashboard = () => {
               </div>
             </div>
             <span className="bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide">
-              {user?.role?.toUpperCase() || "STUDENT"} PORTAL
+              {userRole?.toUpperCase() || "STUDENT"} PORTAL
             </span>
           </div>
         </motion.div>
@@ -498,17 +520,29 @@ const Dashboard = () => {
             onClick={() => navigate("/cupuriportal/dashboard/browse")}>
             Browse
           </motion.button>
-          {user?.role === "admin" && (
-            <motion.button
-              whileHover={{
-                scale: 1.02,
-                boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)",
-              }}
-              whileTap={{ scale: 0.95 }}
-              className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors shadow-sm"
-              onClick={() => navigate("/cupuriportal/dashboard/reviews")}>
-              ⭐ Reviews
-            </motion.button>
+          {userRole === "admin" && (
+            <>
+              <motion.button
+                whileHover={{
+                  scale: 1.02,
+                  boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)",
+                }}
+                whileTap={{ scale: 0.95 }}
+                className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors shadow-sm"
+                onClick={() => navigate("/cupuriportal/dashboard/reviews")}>
+                ⭐ Reviews
+              </motion.button>
+              <motion.button
+                whileHover={{
+                  scale: 1.02,
+                  boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
+                }}
+                whileTap={{ scale: 0.95 }}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors shadow-sm flex items-center gap-2"
+                onClick={() => navigate("/cupuriportal/dashboard/users")}>
+                <Users size={18} /> Manage Users
+              </motion.button>
+            </>
           )}
         </motion.div>
 
@@ -588,18 +622,20 @@ const Dashboard = () => {
             className="bg-white rounded-xl shadow-sm p-6 flex justify-between items-center border border-slate-100 cursor-default">
             <div>
               <div className="text-3xl font-bold text-slate-800">
-                {downloadStats.studyStreak}
+                {userRole === "admin" ? totalUsers : downloadStats.studyStreak}
               </div>
-              <div className="text-sm text-slate-500 mt-1">Days active</div>
+              <div className="text-sm text-slate-500 mt-1">
+                {userRole === "admin" ? "Total Users" : "Days active"}
+              </div>
             </div>
             <div className="w-14 h-14 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
-              <Flag size={24} />
+              {userRole === "admin" ? <Users size={24} /> : <Flag size={24} />}
             </div>
           </motion.div>
         </motion.div>
 
         {/* Admin Charts Section */}
-        {user?.role === "admin" && (
+        {userRole === "admin" && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

@@ -21,97 +21,77 @@ import Footer from "../footer";
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 const BrowseExams = () => {
-  const { exams, faculties, courses, loading, refreshExams } = useApp();
-  const { user } = useAuth();
+  // 1. Get the fetcher function from Context
+  const { faculties, courses, fetchExams, loading } = useApp(); 
+  const { user, userRole } = useAuth();
 
-  // Debug log: PDF Fix Verified
-  // console.log("BrowseExams Component Loaded - with PDF Fix v4");
+  // 2. Local State for Data (The "Current Page" of results)
+  const [exams, setExams] = useState([]);
+  const [pagination, setPagination] = useState({ totalPages: 1, totalExams: 0 });
+  const [isDataLoading, setIsDataLoading] = useState(false);
 
+  // 3. Filter States
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFaculty, setSelectedFaculty] = useState("All Faculties");
   const [selectedCourse, setSelectedCourse] = useState("All Courses");
   const [selectedExamType, setSelectedExamType] = useState("All Types");
-  const [filteredExams, setFilteredExams] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Other UI States
   const [previewExam, setPreviewExam] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ open: false, exam: null });
-  const [resultModal, setResultModal] = useState({
-    open: false,
-    success: true,
-    message: "",
-  });
-
-  // PDF Preview State
+  const [resultModal, setResultModal] = useState({ open: false, success: true, message: "" });
   const [pdfPage, setPdfPage] = useState(1);
-
-  // State for maximum pages in PDF preview
   const [maxPages, setMaxPages] = useState(null);
-
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const examsPerPage = 6;
 
   // Debug mode - set to true to disable screenshot protection
   const DEBUG_MODE = false;
 
-  // Filter exams based on search and filters
+  /**
+   * CORE LOGIC: The API Trigger
+   * This runs whenever ANY filter or page changes.
+   */
   useEffect(() => {
-    if (exams) {
-      let tempExams = [...exams];
+    const loadExams = async () => {
+      setIsDataLoading(true);
+      const data = await fetchExams({
+        page: currentPage,
+        limit: 6, // Match your UI design
+        search: searchTerm,
+        faculty: selectedFaculty,
+        course: selectedCourse,
+        examType: selectedExamType
+      });
 
-      // Filter by search term
-      if (searchTerm) {
-        tempExams = tempExams.filter(
-          (exam) =>
-            exam.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            exam.course?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            exam.faculty?.toLowerCase().includes(searchTerm.toLowerCase()),
-        );
-      }
+      setExams(data.exams);
+      setPagination(data.pagination);
+      setIsDataLoading(false);
+    };
 
-      // Filter by faculty
-      if (selectedFaculty !== "All Faculties") {
-        tempExams = tempExams.filter(
-          (exam) => exam.faculty === selectedFaculty,
-        );
-      }
+    // Debounce search slightly to avoid hitting the DB on every single keystroke
+    const delayDebounce = setTimeout(() => {
+      loadExams();
+    }, 300);
 
-      // Filter by course
-      if (selectedCourse !== "All Courses") {
-        tempExams = tempExams.filter((exam) => exam.course === selectedCourse);
-      }
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm, selectedFaculty, selectedCourse, selectedExamType, currentPage]);
 
-      // Filter by exam type
-      if (selectedExamType !== "All Types") {
-        tempExams = tempExams.filter(
-          (exam) => exam.examType === selectedExamType,
-        );
-      }
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedFaculty, selectedCourse, selectedExamType]);
 
-      setFilteredExams(tempExams);
-      setCurrentPage(1); // Reset to first page when filters change
-    }
-  }, [searchTerm, selectedFaculty, selectedCourse, selectedExamType, exams]);
-
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredExams.length / examsPerPage);
-  const startIndex = (currentPage - 1) * examsPerPage;
-  const endIndex = startIndex + examsPerPage;
-  const paginatedExams = filteredExams.slice(startIndex, endIndex);
-
-  // Pagination handlers
+  // Pagination handler
   const goToPage = (page) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+    setCurrentPage(page);
     window.scrollTo({ top: 300, behavior: "smooth" });
   };
 
-  const uniqueFaculties = [
-    ...new Set(exams?.map((exam) => exam.faculty).filter(Boolean)),
-  ];
-  const uniqueCourses = [
-    ...new Set(exams?.map((exam) => exam.course).filter(Boolean)),
-  ];
+  // Helper for Faculty/Course dropdowns (Small enough to keep in Context)
+  const uniqueFaculties = faculties.map(f => f.name || f); // Adapt to your data structure
+  const uniqueCourses = courses.map(c => c.title || c);
 
   const handlePreview = (exam) => {
     try {
@@ -223,6 +203,11 @@ const BrowseExams = () => {
   // Helper function to get file URL (works for both Cloudinary and local files)
   const getFileUrl = (filePath) => {
     if (isCloudinaryUrl(filePath)) {
+      // 🚀 MAGIC: Browsers can't display HEIC natively. 
+      // Cloudinary can convert them to JPG dynamically just by changing the extension!
+      if (filePath.toLowerCase().endsWith('.heic') || filePath.toLowerCase().endsWith('.heif')) {
+        return filePath.replace(/\.heic$/i, '.jpg').replace(/\.heif$/i, '.jpg');
+      }
       return filePath; // Use the URL exactly as stored in Cloudinary/DB
     }
     // Local file - construct URL
@@ -244,12 +229,21 @@ const BrowseExams = () => {
       }
 
       // Extract extension dynamically for scalability
-      const extension = actualFilePath.split(".").pop().toLowerCase();
+      let extension = actualFilePath.split(".").pop().toLowerCase();
+      
+      // 🚀 ZIP CHECK: If actualFilePath came from an array of multiple items, it's a zip
+      try {
+           const parsed = JSON.parse(exam.filePath);
+           if (Array.isArray(parsed) && parsed.length > 1) {
+               extension = "zip";
+           }
+      } catch (e) {}
+
       const fileName = exam.title
         ? `${exam.title}.${extension}`
         : `document.${extension}`;
-
-      // Check if it's a Cloudinary PDF and block download
+      // Check if it's a Cloudinary PDF and block download (COMMENTED OUT FOR NOW)
+      /* 
       if (isCloudinaryUrl(actualFilePath) && extension === 'pdf') {
           toast.info(
             "PDF downloads coming soon! 🚀\nPlease use Preview for now.",
@@ -257,7 +251,7 @@ const BrowseExams = () => {
           );
           return;
       }
-
+      */
       // Use the new backend proxy endpoint for ALL downloads
       // This solves Cloudinary CORS/401 issues and works for local files too
       const downloadUrl = `${BASE_URL}/exams/download/${exam.id}`;
@@ -277,19 +271,40 @@ const BrowseExams = () => {
       const contentType = response.headers.get("content-type");
       
       if (contentType && contentType.includes("application/json")) {
-          // Backend returned a JSON with signed URL (Cloudinary)
+          // Backend returned a JSON with signed URL (Cloudinary ZIP or Single File)
           const data = await response.json();
           if (data.downloadUrl) {
+              // 🚀 RELIABLE: Direct Cloudinary Download
+              // Since you enabled PDF/ZIP delivery in Cloudinary settings, 
+              // we can now let the browser handle the download directly.
+              // This shows a native progress bar and is faster for large files.
               const link = document.createElement("a");
               link.href = data.downloadUrl;
               link.setAttribute("download", fileName); 
-              // Direct external link, let browser handle it. 
-              // Usually sets target _blank to avoid staying on JSON page if something fails, 
-              // but for download href it's fine.
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
               toast.success("Download started!");
+
+              /* 
+              // PREVIOUS 'BLOB MAGIC' LOGIC (Hides URL but is slower for large files)
+              try {
+                  const fileResponse = await fetch(data.downloadUrl);
+                  if (!fileResponse.ok) throw new Error("Failed to fetch file from cloud");
+                  const fileBlob = await fileResponse.blob();
+                  const localObjectUrl = window.URL.createObjectURL(fileBlob);
+                  const link = document.createElement("a");
+                  link.href = localObjectUrl;
+                  link.setAttribute("download", fileName); 
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  setTimeout(() => window.URL.revokeObjectURL(localObjectUrl), 1000);
+                  toast.success("Download started!");
+              } catch (e) {
+                  // Fallback...
+              }
+              */
               return;
           }
       }
@@ -339,9 +354,24 @@ const BrowseExams = () => {
         throw new Error(data.message || "Delete failed");
       }
 
-      if (refreshExams) {
-        await refreshExams();
-      }
+      // if (refreshExams) {
+      //   await refreshExams();
+      // }
+
+      // 🔥 SUCCESS: Instead of refreshExams, we re-run the local fetcher
+    // This calls the API again with your current page/filters
+    const data = await fetchExams({
+      page: currentPage,
+      limit: 6,
+      search: searchTerm,
+      faculty: selectedFaculty,
+      course: selectedCourse,
+      examType: selectedExamType
+    });
+
+    // Update the local state with the fresh data
+    setExams(data.exams);
+    setPagination(data.pagination);
 
       setResultModal({
         open: true,
@@ -523,13 +553,8 @@ const BrowseExams = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 px-1">
           <p className="text-sm text-slate-500 font-medium">
             Showing{" "}
-            <span className="text-slate-900">{filteredExams.length}</span>{" "}
+            <span className="text-slate-900">{pagination.totalExams}</span>{" "}
             results found
-            {totalPages > 1 && (
-              <span className="ml-1 opacity-70">
-                ({startIndex + 1}-{Math.min(endIndex, filteredExams.length)})
-              </span>
-            )}
           </p>
           {(searchTerm ||
             selectedFaculty !== "All Faculties" ||
@@ -545,7 +570,11 @@ const BrowseExams = () => {
 
         {/* Exam List - Motion Removed for rendering */}
         <div className="grid grid-cols-1 gap-6">
-          {filteredExams.length === 0 ? (
+          {isDataLoading ? (
+            <div className="py-20 text-center">
+                <div className="inline-block w-8 h-8 border-4 border-[#008767] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : exams.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center">
               <FileText className="w-16 h-16 text-slate-200 mx-auto mb-4" />
               <h3 className="text-slate-800 font-bold text-lg">
@@ -556,7 +585,7 @@ const BrowseExams = () => {
               </p>
             </div>
           ) : (
-            paginatedExams.map((exam) => (
+            exams.map((exam) => (
               <div
                 key={exam.id}
                 className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-8 hover:shadow-md transition-shadow group">
@@ -624,7 +653,7 @@ const BrowseExams = () => {
                       <Download className="w-4 h-4" />
                       Download
                     </motion.button>
-                    {user?.role === "admin" && (
+                    {userRole === "admin" && (
                       <motion.button
                         whileHover={{ y: -2 }}
                         whileTap={{ scale: 0.98 }}
@@ -642,7 +671,7 @@ const BrowseExams = () => {
         </div>
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {pagination.totalPages > 1 && (
           <div className="flex items-center justify-center gap-2 mt-12">
             <button
               onClick={() => goToPage(currentPage - 1)}
@@ -651,7 +680,7 @@ const BrowseExams = () => {
               <ChevronLeft className="w-6 h-6" />
             </button>
             <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(
                 (page) => (
                   <button
                     key={page}
@@ -668,7 +697,7 @@ const BrowseExams = () => {
             </div>
             <button
               onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
+              disabled={currentPage === pagination.totalPages}
               className="p-2 text-slate-500 hover:bg-white hover:shadow-sm rounded-lg disabled:opacity-30 transition-all">
               <ChevronRight className="w-6 h-6" />
             </button>

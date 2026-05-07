@@ -90,6 +90,10 @@ app.use("/api/visits", visitRoutes);
 // Error handler
 app.use(errorHandler);
 
+// Trust any proxy each time the app starts
+
+app.set("trust proxy", 1);
+
 // Start server
 const PORT = process.env.PORT || 3009;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

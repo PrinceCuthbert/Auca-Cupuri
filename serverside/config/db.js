@@ -10,6 +10,7 @@ const testConnection = async () => {
     const config = {
       host: process.env.DB_HOST || "localhost",
       user: process.env.DB_USER || "root",
+      port: process.env.DB_PORT || 21186,
       password: process.env.DB_PASSWORD || "Cuthbert@123",
       database: process.env.DB_NAME || "auca_cupuri_portal",
     };
@@ -30,7 +31,7 @@ const testConnection = async () => {
 
     const connection = await mysql.createConnection(config);
     console.log("✅ Database connected successfully!");
-    await connection.end();
+   
   } catch (error) {
     console.error("❌ Database connection failed:", error.message);
     console.log("\n🔧 Please check your database configuration");

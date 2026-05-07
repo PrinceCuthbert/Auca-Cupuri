@@ -30,7 +30,7 @@ export const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "cupuri-exams", // Folder name in Cloudinary
-    allowed_formats: ["pdf", "doc", "docx", "jpg", "jpeg", "png"],
+    allowed_formats: ["pdf", "doc", "docx", "jpg", "jpeg", "png", "heic", "heif"],
     resource_type: "auto", // Automatically detect file type
   },
 });

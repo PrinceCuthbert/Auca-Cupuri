@@ -17,7 +17,7 @@ import { Modal } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 
 const StudentReviews = () => {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [myReviews, setMyReviews] = useState([]);
   const [stats, setStats] = useState(null);
@@ -43,13 +43,13 @@ const StudentReviews = () => {
   ];
 
   useEffect(() => {
-    if (user?.role === "admin") {
+    if (userRole === "admin") {
       fetchAllReviews();
       fetchStats();
-    } else if (user?.role === "student") {
+    } else if (userRole === "student") {
       fetchMyReviews();
     }
-  }, [user]);
+  }, [user, userRole]);
 
   const fetchAllReviews = async () => {
     try {
@@ -59,7 +59,8 @@ const StudentReviews = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setReviews(data);
+        // Handle both old array format and new paginated object format
+        setReviews(Array.isArray(data) ? data : data.reviews || []);
       }
     } catch {
       // Silent fail
@@ -137,7 +138,7 @@ const StudentReviews = () => {
               : "Review submitted successfully!")
         );
         resetForm();
-        if (user?.role === "admin") {
+        if (userRole === "admin") {
           fetchAllReviews();
           fetchStats();
         } else {
@@ -186,7 +187,7 @@ const StudentReviews = () => {
 
           if (response.ok) {
             toast.success("Review deleted successfully");
-            if (user?.role === "admin") {
+            if (userRole === "admin") {
               fetchAllReviews();
               fetchStats();
             } else {
@@ -244,7 +245,7 @@ const StudentReviews = () => {
   }
 
   // Student View
-  if (user?.role === "student") {
+  if (userRole === "student") {
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
