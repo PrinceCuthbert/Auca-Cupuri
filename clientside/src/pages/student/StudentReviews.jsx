@@ -260,7 +260,7 @@ const StudentReviews = () => {
               </h1>
             </div>
             <p className="text-gray-600 text-sm">
-              Share your experience with the AUCA CUPURI portal and view your
+              Share your experience with the Cupuri Portal and view your
               submitted reviews.
             </p>
           </div>

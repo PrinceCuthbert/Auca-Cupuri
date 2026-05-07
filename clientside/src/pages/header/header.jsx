@@ -27,10 +27,10 @@ const Header = () => {
     };
 
     const title = pageTitles[location.pathname];
-    document.title = `Auca Cupuri | ${title}`;
+    document.title = `Cupuri Portal | ${title}`;
 
     return function () {
-      document.title = "Auca Cupuri | Past Paper Exams Portal";
+      document.title = "Cupuri Portal | Past Paper Exams Portal";
       // console.log(`Clean up effect for pages ${title}`);
     };
   }, [location.pathname]);
@@ -67,7 +67,7 @@ const Header = () => {
           </div>
           <div className="flex flex-col leading-tight select-none">
             <h1 className="text-xl font-bold m-0 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-              AUCA CUPURI
+              Cupuri Portal
             </h1>
             <p className="text-xs text-gray-500 m-0 hidden sm:block">
               Past Exams Portal

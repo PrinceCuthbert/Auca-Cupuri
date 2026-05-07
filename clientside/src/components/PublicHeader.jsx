@@ -23,7 +23,7 @@ const PublicHeader = () => {
           <div className="bg-[#008767] p-2 rounded-lg">
             <GraduationCap className="text-white" size={24} />
           </div>
-          <span className="text-xl md:text-2xl font-black tracking-tighter text-slate-900">CUPURI</span>
+          <span className="text-xl md:text-2xl font-black tracking-tighter text-slate-900">Cupuri Portal</span>
         </Link>
         
         {/* Desktop Navigation Links (Center) */}
@@ -74,7 +74,7 @@ const PublicHeader = () => {
                   <div className="bg-[#008767] p-2 rounded-lg text-white">
                     <GraduationCap size={24} />
                   </div>
-                  <span className="text-2xl font-black tracking-tighter">CUPURI</span>
+                  <span className="text-2xl font-black tracking-tighter">Cupuri Portal</span>
                 </div>
                 <button onClick={() => setMobileMenuOpen(false)} className="p-2 bg-slate-100 rounded-full text-slate-900">
                   <CloseIcon size={24} />

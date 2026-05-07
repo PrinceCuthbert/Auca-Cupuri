@@ -41,7 +41,7 @@ export default function Login() {
             <div className="w-12 h-12 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl mx-auto mb-4 flex items-center justify-center text-white">
               <GraduationCap className="w-6 h-6" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-800">Sign in to AUCA CUPURI</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Sign in to Cupuri Portal</h2>
           </div>
 
           <form className="flex flex-col gap-4 text-left" onSubmit={handleSubmit}>

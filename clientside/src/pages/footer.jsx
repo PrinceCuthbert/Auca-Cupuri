@@ -18,7 +18,7 @@ function Footer() {
               <GraduationCap className="text-white w-6 h-6" />
             </div>
             <div className="flex flex-col items-start">
-              <h3 className="text-white text-xl font-bold m-0 text-left">AUCA CUPURI</h3>
+              <h3 className="text-white text-xl font-bold m-0 text-left">Cupuri Portal</h3>
               <p className="text-emerald-300 mt-0.5 text-xs sm:text-sm">Past Exams Portal</p>
             </div>
           </div>
@@ -94,7 +94,7 @@ function Footer() {
       <hr className="my-6 sm:my-8 h-px bg-gray-500/30 border-none" />
 
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-gray-400 text-[10px] sm:text-xs uppercase font-bold tracking-widest text-center sm:text-left">
-        <div>© {year} AUCA CUPURI Portal.</div>
+        <div>© {year} Cupuri Portal.</div>
         <div>
           Developed with <span className="text-emerald-500">❤️</span> by{" "}
           <span className="text-white">Prince Cuthbert</span>

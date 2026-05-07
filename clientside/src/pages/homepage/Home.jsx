@@ -225,7 +225,7 @@ const Features = () => {
             { 
               icon: Users, 
               title: "Student Community", 
-              desc: "Join over 1,000 students who use Cupuri daily to improve their grades and understanding." 
+              desc: "Join over 1,000 students who use Cupuri Portal daily to improve their grades and understanding." 
             },
             { 
               icon: Smartphone, 

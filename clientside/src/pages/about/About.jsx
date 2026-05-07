@@ -20,7 +20,7 @@ const About = () => {
               <span className="text-[#008767]">ACADEMIC EXCELLENCE.</span>
             </h1>
             <p className="text-xl text-slate-500 leading-relaxed max-w-2xl mx-auto">
-              CUPURI was born out of a simple need: to make high-quality academic resources accessible to every student at AUCA.
+              Cupuri Portal was born out of a simple need: to make high-quality academic resources accessible to every student at AUCA.
             </p>
           </motion.div>
         </div>
@@ -42,7 +42,7 @@ const About = () => {
               <div>
                 <h3 className="text-2xl font-bold mb-2 tracking-tight">A Centralized Repository</h3>
                 <p className="text-slate-600 leading-relaxed">
-                  We believe that revision shouldn't be a scavenger hunt. CUPURI provides a single, organized platform for students to access past examination papers across all faculties, ensuring that your focus stays on learning, not searching.
+                  We believe that revision shouldn't be a scavenger hunt. Cupuri Portal provides a single, organized platform for students to access past examination papers across all faculties, ensuring that your focus stays on learning, not searching.
                 </p>
               </div>
             </div>
@@ -109,7 +109,7 @@ const About = () => {
                 Developed by Prince Cuthbert
               </h2>
               <p className="text-slate-500 leading-relaxed mb-8 text-lg">
-                I built AUCA CUPURI to solve a real challenge I saw in our campus community. As a developer, I'm committed to creating tools that make a difference.
+                I built Cupuri Portal to solve a real challenge I saw in our campus community. As a developer, I'm committed to creating tools that make a difference.
               </p>
               
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
