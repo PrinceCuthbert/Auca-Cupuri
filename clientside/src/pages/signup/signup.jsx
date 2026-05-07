@@ -54,7 +54,7 @@ export default function SignUp() {
 
       console.log("Registration successful, redirecting...");
       toast.success("Account created successfully!");
-      navigate("/cupuriportal/login");
+      navigate("/login");
     } catch (err) {
       console.error("Registration failed:", err);
       toast.error(err.message || "Registration failed. Please try again.");
@@ -77,7 +77,7 @@ export default function SignUp() {
           <p className="text-gray-600">
             Already have an account?{" "}
             <Link
-              to="/cupuriportal/login"
+              to="/login"
               className="text-emerald-600 font-semibold hover:underline">
               Sign in here
             </Link>

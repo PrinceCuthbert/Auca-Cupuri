@@ -507,7 +507,7 @@ const Dashboard = () => {
             }}
             whileTap={{ scale: 0.95 }}
             className="px-6 py-2.5 bg-[#008767] hover:bg-[#006d53] text-white font-medium rounded-lg transition-colors shadow-sm"
-            onClick={() => navigate("/cupuriportal/dashboard/upload")}>
+            onClick={() => navigate("/dashboard/upload")}>
             Upload
           </motion.button>
           <motion.button
@@ -517,7 +517,7 @@ const Dashboard = () => {
             }}
             whileTap={{ scale: 0.95 }}
             className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
-            onClick={() => navigate("/cupuriportal/dashboard/browse")}>
+            onClick={() => navigate("/dashboard/browse")}>
             Browse
           </motion.button>
           {userRole === "admin" && (
@@ -529,7 +529,7 @@ const Dashboard = () => {
                 }}
                 whileTap={{ scale: 0.95 }}
                 className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors shadow-sm"
-                onClick={() => navigate("/cupuriportal/dashboard/reviews")}>
+                onClick={() => navigate("/dashboard/reviews")}>
                 ⭐ Reviews
               </motion.button>
               <motion.button
@@ -539,7 +539,7 @@ const Dashboard = () => {
                 }}
                 whileTap={{ scale: 0.95 }}
                 className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors shadow-sm flex items-center gap-2"
-                onClick={() => navigate("/cupuriportal/dashboard/users")}>
+                onClick={() => navigate("/dashboard/users")}>
                 <Users size={18} /> Manage Users
               </motion.button>
             </>
@@ -875,7 +875,7 @@ const Dashboard = () => {
                       <button
                         className="flex-1 flex items-center justify-center gap-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors"
                         onClick={() =>
-                          navigate("/cupuriportal/dashboard/browse")
+                          navigate("/dashboard/browse")
                         }>
                         <Eye size={16} />
                         Visit
@@ -883,7 +883,7 @@ const Dashboard = () => {
                       <button
                         className="flex-1 flex items-center justify-center gap-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
                         onClick={() =>
-                          navigate("/cupuriportal/dashboard/browse")
+                          navigate("/dashboard/browse")
                         }>
                         <Download size={16} />
                         Download
@@ -902,7 +902,7 @@ const Dashboard = () => {
                 </p>
                 <button
                   className="px-6 py-2 bg-[#008767] hover:bg-[#006d53] text-white font-medium rounded-lg transition-all shadow-sm active:scale-95"
-                  onClick={() => navigate("/cupuriportal/dashboard/upload")}>
+                  onClick={() => navigate("/dashboard/upload")}>
                   Upload Exam
                 </button>
               </div>

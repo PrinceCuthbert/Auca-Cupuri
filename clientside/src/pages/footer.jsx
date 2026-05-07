@@ -37,19 +37,19 @@ function Footer() {
             {isAuthenticated && userRole === "admin" ? (
               <>
                 <li className="text-left hover:text-white transition-colors">
-                  <Link to="/cupuriportal/dashboard/browse">Browse Exams</Link>
+                  <Link to="/dashboard/browse">Browse Exams</Link>
                 </li>
                 <li className="text-left hover:text-white transition-colors">
-                  <Link to="/cupuriportal/dashboard">Dashboard</Link>
+                  <Link to="/dashboard">Dashboard</Link>
                 </li>
               </>
             ) : isAuthenticated && userRole === "student" ? (
               <>
                 <li className="text-left hover:text-white transition-colors">
-                  <Link to="/cupuriportal/dashboard/browse">Browse Exams</Link>
+                  <Link to="/dashboard/browse">Browse Exams</Link>
                 </li>
                 <li className="text-left hover:text-white transition-colors">
-                  <Link to="/cupuriportal/dashboard">Home</Link>
+                  <Link to="/dashboard">Home</Link>
                 </li>
               </>
             ) : (
@@ -58,10 +58,10 @@ function Footer() {
                   <Link to="/">Home</Link>
                 </li>
                 <li className="text-left hover:text-white transition-colors">
-                  <Link to="/cupuriportal/login">Login</Link>
+                  <Link to="/login">Login</Link>
                 </li>
                 <li className="text-left hover:text-white transition-colors">
-                  <Link to="/cupuriportal/signup">SignUp</Link>
+                  <Link to="/signup">SignUp</Link>
                 </li>
               </>
             )}

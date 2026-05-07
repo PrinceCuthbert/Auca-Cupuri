@@ -6,7 +6,7 @@ export default function ProtectedRoute() {
 
   // Not logged in → back to login
   if (!isAuthenticated) {
-    return <Navigate to="/cupuriportal/login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   // Logged in → allow access

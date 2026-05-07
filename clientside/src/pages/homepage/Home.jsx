@@ -67,7 +67,7 @@ const Hero = () => {
               </h1>
 
               <div className="flex flex-wrap items-center gap-6">
-                <Link to="/cupuriportal/signup">
+                <Link to="/signup">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -256,7 +256,7 @@ const CTA = () => {
           <h2 className="text-4xl md:text-6xl font-black text-white mb-8 tracking-tighter">
             Ready to transform your study habits?
           </h2>
-          <Link to="/cupuriportal/signup">
+          <Link to="/signup">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

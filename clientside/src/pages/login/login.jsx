@@ -24,7 +24,7 @@ export default function Login() {
     try {
       await login(email, password);
       toast.success("Logged in successfully!");
-      navigate("/cupuriportal/dashboard");
+      navigate("/dashboard");
     } catch (err) {
       setError(err.message);
       toast.error(err.message);
@@ -91,7 +91,7 @@ export default function Login() {
 
           <div className="mt-6 text-sm text-gray-600">
             Don't have an account?{" "}
-            <Link to="/cupuriportal/signup" className="text-emerald-600 font-semibold hover:underline">
+            <Link to="/signup" className="text-emerald-600 font-semibold hover:underline">
               Sign up here
             </Link>
           </div>

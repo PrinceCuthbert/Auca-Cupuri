@@ -192,7 +192,7 @@ function UploadForm() {
       const user = JSON.parse(localStorage.getItem("auca-cupuri-user"));
       if (!user) {
         toast.error("Please login to upload exams");
-        navigate("/cupuriportal/login");
+        navigate("/login");
         return;
       }
 
@@ -209,7 +209,7 @@ function UploadForm() {
       // Immediately set success and redirect, unblocking the user
       setSuccess(true);
       setTimeout(() => {
-        navigate("/cupuriportal/dashboard");
+        navigate("/dashboard");
       }, 1500);
 
     } catch (error) {
@@ -234,7 +234,7 @@ function UploadForm() {
               students.
             </p>
             <button
-              onClick={() => navigate("/cupuriportal/dashboard")}
+              onClick={() => navigate("/dashboard")}
               className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
               Go to Dashboard
             </button>
@@ -503,7 +503,7 @@ function UploadForm() {
             <div className="flex justify-end space-x-3 pt-4">
               <button
                 type="button"
-                onClick={() => navigate("/cupuriportal/dashboard")}
+                onClick={() => navigate("/dashboard")}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-300">
                 Cancel
               </button>

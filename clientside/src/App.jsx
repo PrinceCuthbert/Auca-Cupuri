@@ -24,7 +24,7 @@ function AppContent() {
   const location = useLocation();
   
   // Public routes that use the unified PublicHeader
-  const publicPaths = ["/", "/about", "/cupuriportal/login", "/cupuriportal/signup"];
+  const publicPaths = ["/", "/about", "/login", "/signup"];
   const isPublicPage = publicPaths.includes(location.pathname);
 
   return (
@@ -35,17 +35,17 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
 
-        <Route path="/cupuriportal/login" element={<Login />} />
-        <Route path="/cupuriportal/signup" element={<SignUp />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
 
         {/* 🔐 Protected section */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/cupuriportal/dashboard" element={<Dashboard />} />
-          <Route path="/cupuriportal/dashboard/upload" element={<UploadForm />} />
-          <Route path="/cupuriportal/dashboard/browse" element={<BrowseExams />} />
-          <Route path="/cupuriportal/dashboard/reviews" element={<AdminReviews />} />
-          <Route path="/cupuriportal/dashboard/users" element={<UserManagement />} />
-          <Route path="/cupuriportal/reviews" element={<StudentReviews />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard/upload" element={<UploadForm />} />
+          <Route path="/dashboard/browse" element={<BrowseExams />} />
+          <Route path="/dashboard/reviews" element={<AdminReviews />} />
+          <Route path="/dashboard/users" element={<UserManagement />} />
+          <Route path="/reviews" element={<StudentReviews />} />
         </Route>
 
         {/* Catch all - 404 */}

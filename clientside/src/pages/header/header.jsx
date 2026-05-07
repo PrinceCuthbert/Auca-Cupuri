@@ -18,12 +18,12 @@ const Header = () => {
     const pageTitles = {
       "/": "Past Paper Exams Portal",
       "/about": "About Us",
-      "/cupuriportal/login": "Login",
-      "/cupuriportal/signup": "Sign Up",
-      "/cupuriportal/dashboard/browse": "Browse",
-      "/cupuriportal/dashboard/upload": "Upload",
-      "/cupuriportal/dashboard": "Dashboard",
-      "/cupuriportal/reviews": "Reviews",
+      "/login": "Login",
+      "/signup": "Sign Up",
+      "/dashboard/browse": "Browse",
+      "/dashboard/upload": "Upload",
+      "/dashboard": "Dashboard",
+      "/reviews": "Reviews",
     };
 
     const title = pageTitles[location.pathname];
@@ -43,7 +43,7 @@ const Header = () => {
   const handleLogout = () => {
     logout();
     setMobileMenuOpen(false);
-    navigate("/cupuriportal/login");
+    navigate("/login");
   };
 
   const isActiveRoute = (path) => {
@@ -55,7 +55,7 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 flex justify-between items-center h-16">
         {/* Logo */}
         <Link
-          to={isAuthenticated && user ? "/cupuriportal/dashboard" : "/"}
+          to={isAuthenticated && user ? "/dashboard" : "/"}
           className="flex items-center gap-3 no-underline">
           <div className="bg-gradient-to-br from-emerald-600 to-teal-600 p-2 rounded-xl flex transition-transform duration-300 hover:scale-110 text-white">
             <svg
@@ -80,9 +80,9 @@ const Header = () => {
           {isAuthenticated && user && (
             <>
               <Link
-                to="/cupuriportal/dashboard/browse"
+                to="/dashboard/browse"
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 select-none ${
-                  isActiveRoute("/cupuriportal/dashboard/browse")
+                  isActiveRoute("/dashboard/browse")
                     ? "bg-emerald-100 text-emerald-700 shadow-sm"
                     : "text-gray-600 hover:text-emerald-600 hover:bg-emerald-50"
                 }`}>
@@ -102,9 +102,9 @@ const Header = () => {
               </Link>
 
               <Link
-                to="/cupuriportal/dashboard"
+                to="/dashboard"
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 select-none ${
-                  isActiveRoute("/cupuriportal/dashboard")
+                  isActiveRoute("/dashboard")
                     ? "bg-emerald-100 text-emerald-700 shadow-sm"
                     : "text-gray-600 hover:text-emerald-600 hover:bg-emerald-50"
                 }`}>
@@ -124,9 +124,9 @@ const Header = () => {
               </Link>
 
               <Link
-                to="/cupuriportal/reviews"
+                to="/reviews"
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 select-none ${
-                  isActiveRoute("/cupuriportal/reviews")
+                  isActiveRoute("/reviews")
                     ? "bg-emerald-100 text-emerald-700 shadow-sm"
                     : "text-gray-600 hover:text-emerald-600 hover:bg-emerald-50"
                 }`}>
@@ -182,12 +182,12 @@ const Header = () => {
         ) : (
           <div className="hidden md:flex gap-2 items-center">
             <Link
-              to="/cupuriportal/login"
+              to="/login"
               className="text-sm font-medium text-gray-700 no-underline hover:text-emerald-600 transition-colors duration-300 select-none">
               Login
             </Link>
             <Link
-              to="/cupuriportal/signup"
+              to="/signup"
               className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg no-underline shadow-lg hover:from-emerald-700 hover:to-teal-700 hover:-translate-y-0.5 transition-all duration-300 select-none">
               Sign Up
             </Link>
@@ -250,9 +250,9 @@ const Header = () => {
 
               {/* Navigation Links */}
               <Link
-                to="/cupuriportal/dashboard/browse"
+                to="/dashboard/browse"
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                  isActiveRoute("/cupuriportal/dashboard/browse")
+                  isActiveRoute("/dashboard/browse")
                     ? "bg-emerald-100 text-emerald-700"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}>
@@ -272,9 +272,9 @@ const Header = () => {
               </Link>
 
               <Link
-                to="/cupuriportal/dashboard"
+                to="/dashboard"
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                  isActiveRoute("/cupuriportal/dashboard")
+                  isActiveRoute("/dashboard")
                     ? "bg-emerald-100 text-emerald-700"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}>
@@ -294,9 +294,9 @@ const Header = () => {
               </Link>
 
               <Link
-                to="/cupuriportal/reviews"
+                to="/reviews"
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                  isActiveRoute("/cupuriportal/reviews")
+                  isActiveRoute("/reviews")
                     ? "bg-emerald-100 text-emerald-700"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}>
@@ -339,12 +339,12 @@ const Header = () => {
           ) : (
             <div className="p-4 space-y-3">
               <Link
-                to="/cupuriportal/login"
+                to="/login"
                 className="block w-full text-center px-4 py-3 text-sm font-medium text-gray-700 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                 Login
               </Link>
               <Link
-                to="/cupuriportal/signup"
+                to="/signup"
                 className="block w-full text-center px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all">
                 Sign Up
               </Link>

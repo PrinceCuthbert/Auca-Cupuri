@@ -42,10 +42,10 @@ const PublicHeader = () => {
         <div className="flex items-center gap-3">
           {/* Desktop Auth Buttons */}
           <div className="hidden sm:flex items-center gap-3">
-            <Link to="/cupuriportal/login" className="px-7 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-full hover:bg-slate-800 transition-all shadow-md shadow-black/10">
+            <Link to="/login" className="px-7 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-full hover:bg-slate-800 transition-all shadow-md shadow-black/10">
               Login
             </Link>
-            <Link to="/cupuriportal/signup" className="px-7 py-2.5 bg-white border border-slate-200 text-slate-900 text-sm font-bold rounded-full hover:bg-slate-50 transition-all shadow-sm">
+            <Link to="/signup" className="px-7 py-2.5 bg-white border border-slate-200 text-slate-900 text-sm font-bold rounded-full hover:bg-slate-50 transition-all shadow-sm">
               Register
             </Link>
           </div>
@@ -95,10 +95,10 @@ const PublicHeader = () => {
               </div>
 
               <div className="flex flex-col gap-4">
-                <Link to="/cupuriportal/login" onClick={() => setMobileMenuOpen(false)} className="w-full py-4 bg-slate-900 text-white text-center font-bold rounded-2xl text-lg">
+                <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="w-full py-4 bg-slate-900 text-white text-center font-bold rounded-2xl text-lg">
                     Login
                 </Link>
-                <Link to="/cupuriportal/signup" onClick={() => setMobileMenuOpen(false)} className="w-full py-4 border border-slate-200 text-slate-900 text-center font-bold rounded-2xl text-lg">
+                <Link to="/signup" onClick={() => setMobileMenuOpen(false)} className="w-full py-4 border border-slate-200 text-slate-900 text-center font-bold rounded-2xl text-lg">
                     Create Account
                 </Link>
               </div>
