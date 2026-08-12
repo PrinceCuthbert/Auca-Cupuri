@@ -1,6 +1,7 @@
 // config/cloudinary.js
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
+import path from "path";
 
 // Validate Cloudinary configuration on startup
 if (
@@ -25,13 +26,22 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+
 // Configure Cloudinary storage for multer
+// NOTE: For raw files (.docx, .pdf), we preserve the original extension in public_id
+// so Cloudinary URLs retain .docx / .pdf extensions for easy browser downloading & previewing.
 export const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: "cupuri-exams", // Folder name in Cloudinary
-    allowed_formats: ["pdf", "doc", "docx", "jpg", "jpeg", "png", "heic", "heif"],
-    resource_type: "auto", // Automatically detect file type
+  params: async (req, file) => {
+    const ext = path.extname(file.originalname).toLowerCase().replace(".", "");
+    const isRaw = ["pdf", "doc", "docx"].includes(ext);
+    const cleanName = path.parse(file.originalname).name.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+    return {
+      folder: "cupuri-exams",
+      resource_type: isRaw ? "raw" : "image",
+      public_id: `${Date.now()}_${cleanName}.${ext}`,
+    };
   },
 });
 

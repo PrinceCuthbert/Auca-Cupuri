@@ -6,30 +6,41 @@ import {
   FileText,
   X,
   CheckCircle,
-  GripVertical,
   Image,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import Footer from "../footer";
 import { Select } from "antd";
 import { useApp } from "../../context/AppContext";
+
 const { Option } = Select;
 
-const BASE_URL = import.meta.env.VITE_BASE_URL;
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+
+const ALLOWED_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "image/jpeg",
+  "image/png",
+  "image/jpg",
+  "image/heic",
+  "image/heif",
+];
 
 function UploadForm() {
   const navigate = useNavigate();
   const { addExam } = useApp();
 
-  const [title, setTitle] = useState();
+  const [title, setTitle] = useState("");
   const [course, setCourse] = useState("");
   const [examType, setExamType] = useState();
   const [faculty, setFaculty] = useState();
   const [examFiles, setExamFiles] = useState([]); // Array of files
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [isDragging, setIsDragging] = useState(false); // Drag & Drop visual feedback state
 
-  // ✅ Extracted all courses from the commented section
   const courses = [
     "Applied Mathematics",
     "Digital Computer Fundamentals",
@@ -91,20 +102,64 @@ function UploadForm() {
 
   const examTypes = ["Mid-Term", "Final"];
 
-  // Handle adding files
-  const handleFileChange = (e) => {
-    const newFiles = Array.from(e.target.files);
-    setExamFiles((prev) => [...prev, ...newFiles]);
-    // Reset input so same file can be added again if removed
-    e.target.value = "";
+  // Helper to validate and add incoming files (from input or drag-and-drop)
+  const validateAndAddFiles = (incomingFiles) => {
+    const validFiles = [];
+
+    for (const file of incomingFiles) {
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`File "${file.name}" exceeds the 20MB limit.`);
+        continue;
+      }
+
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        toast.error(`File "${file.name}" is not a supported format.`);
+        continue;
+      }
+
+      validFiles.push(file);
+    }
+
+    if (validFiles.length > 0) {
+      setExamFiles((prev) => [...prev, ...validFiles]);
+    }
   };
 
-  // Remove a specific file
+  // Drag and Drop Handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const droppedFiles = Array.from(e.dataTransfer.files);
+      validateAndAddFiles(droppedFiles);
+    }
+  };
+
+  // Input File Selection
+  const handleFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    validateAndAddFiles(selectedFiles);
+    e.target.value = ""; // Reset input so same file can be re-added
+  };
+
   const removeFile = (index) => {
     setExamFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Move file up in order
   const moveFileUp = (index) => {
     if (index === 0) return;
     setExamFiles((prev) => {
@@ -117,7 +172,6 @@ function UploadForm() {
     });
   };
 
-  // Move file down in order
   const moveFileDown = (index) => {
     if (index === examFiles.length - 1) return;
     setExamFiles((prev) => {
@@ -130,12 +184,8 @@ function UploadForm() {
     });
   };
 
-  // Check if file is an image
-  const isImageFile = (file) => {
-    return file.type.startsWith("image/");
-  };
+  const isImageFile = (file) => file.type.startsWith("image/");
 
-  // Get total file size
   const getTotalFileSize = () => {
     return examFiles.reduce((sum, file) => sum + file.size, 0);
   };
@@ -150,45 +200,17 @@ function UploadForm() {
       return;
     }
 
-    const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB limit
-    const ALLOWED_TYPES = [
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "image/jpeg",
-      "image/png",
-      "image/jpg",
-      "image/heic",
-      "image/heif"
-    ];
-
-    for (let file of examFiles) {
-      if (file.size > MAX_FILE_SIZE) {
-        toast.error(`File "${file.name}" exceeds the 20MB limit.`);
-        setLoading(false);
-        return;
-      }
-      
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        toast.error(`File "${file.name}" is not a supported format.`);
-        setLoading(false);
-        return;
-      }
-    }
-
     const formData = new FormData();
     formData.append("title", title);
     formData.append("faculty", faculty);
     formData.append("course", course);
     formData.append("examType", examType);
 
-    // Append all files
     examFiles.forEach((file) => {
       formData.append("exam", file);
     });
 
     try {
-      // Check if user is logged in
       const user = JSON.parse(localStorage.getItem("auca-cupuri-user"));
       if (!user) {
         toast.error("Please login to upload exams");
@@ -196,8 +218,6 @@ function UploadForm() {
         return;
       }
 
-      // 🚀 BACKGROUND UPLOAD: Fire the request and don't await it here!
-      // This allows the user to leave the page while Cloudinary does the heavy lifting.
       const uploadPromise = addExam(formData);
 
       toast.promise(uploadPromise, {
@@ -206,16 +226,13 @@ function UploadForm() {
         error: "Failed to upload exam. Please try again.",
       });
 
-      // Immediately set success and redirect, unblocking the user
       setSuccess(true);
       setTimeout(() => {
         navigate("/dashboard");
       }, 1500);
-
     } catch (error) {
       toast.error(error.message || "Failed to start upload");
     } finally {
-      // Remove loading state instantly so the UI isn't stalled
       setLoading(false);
     }
   }
@@ -281,7 +298,7 @@ function UploadForm() {
               />
             </div>
 
-            {/* Faculty (AntD Select) */}
+            {/* Faculty */}
             <div>
               <label
                 htmlFor="faculty"
@@ -307,7 +324,7 @@ function UploadForm() {
               </Select>
             </div>
 
-            {/* Course (AntD Select) */}
+            {/* Course */}
             <div>
               <label
                 htmlFor="course"
@@ -333,7 +350,7 @@ function UploadForm() {
               </Select>
             </div>
 
-            {/* Exam Type (AntD Select) */}
+            {/* Exam Type */}
             <div>
               <label
                 htmlFor="examType"
@@ -355,7 +372,7 @@ function UploadForm() {
               </Select>
             </div>
 
-            {/* File Upload */}
+            {/* File Upload / Drag & Drop Zone */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Upload File(s) *
@@ -363,13 +380,24 @@ function UploadForm() {
                   (You can upload multiple images for multi-page exams)
                 </span>
               </label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-emerald-300 border-dashed rounded-xl hover:border-emerald-400 bg-emerald-50/50 transition-all duration-300">
-                <div className="space-y-1 text-center">
-                  <UploadIcon className="mx-auto h-12 w-12 text-emerald-500" />
-                  <div className="flex text-sm text-gray-600">
+
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-xl transition-all duration-300 ${isDragging
+                  ? "border-emerald-500 bg-emerald-100/80 scale-[1.01] shadow-md"
+                  : "border-emerald-300 hover:border-emerald-400 bg-emerald-50/50"
+                  }`}>
+                <div className="space-y-1 text-center pointer-events-none">
+                  <UploadIcon
+                    className={`mx-auto h-12 w-12 transition-transform duration-300 ${isDragging ? "text-emerald-600 scale-110" : "text-emerald-500"
+                      }`}
+                  />
+                  <div className="flex text-sm text-gray-600 justify-center items-center">
                     <label
                       htmlFor="uploadFile"
-                      className="relative cursor-pointer bg-white rounded-md font-medium text-emerald-600 hover:text-emerald-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-emerald-500 px-1">
+                      className="relative cursor-pointer pointer-events-auto bg-white rounded-md font-medium text-emerald-600 hover:text-emerald-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-emerald-500 px-1">
                       <span>Upload file(s)</span>
                       <input
                         onChange={handleFileChange}
@@ -381,14 +409,13 @@ function UploadForm() {
                         multiple
                       />
                     </label>
-                    <p className="pl-1">or drag and drop</p>
+                    <p className="pl-1">or drag and drop here</p>
                   </div>
                   <p className="text-xs text-gray-500">
                     PDF, DOC, DOCX, JPG, PNG, HEIC up to 20MB each
                   </p>
-                  <p className="text-xs text-emerald-600 font-medium">
-                    💡 Tip: For multi-page exams, select all images at once or
-                    add them one by one
+                  <p className="text-xs text-emerald-600 font-medium pt-1">
+                    💡 Tip: Select multiple images or drop them directly into this area
                   </p>
                 </div>
               </div>
@@ -499,7 +526,7 @@ function UploadForm() {
               </div>
             )}
 
-            {/* Buttons */}
+            {/* Form Action Buttons */}
             <div className="flex justify-end space-x-3 pt-4">
               <button
                 type="button"

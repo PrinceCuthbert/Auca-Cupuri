@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
+import { useSocket } from "../../context/SocketContext";
 import {
   FileText,
   BookOpen,
@@ -57,6 +58,7 @@ const BASE_URL = import.meta.env.VITE_BASE_URL;
 const Dashboard = () => {
   const { user, userRole } = useAuth();
   const navigate = useNavigate();
+  const socket = useSocket();
   const visitorChartRef = useRef(null);
   const hasLoggedVisit = useRef(false);
 
@@ -165,6 +167,33 @@ const Dashboard = () => {
         fetchTotalUsers();
     }
   }, [user, userRole]);
+
+  // Real-time WebSocket listener: Auto-refreshes dashboard stats and exam lists
+  useEffect(() => {
+    if (!socket) return;
+
+    const refreshDashboardExams = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/exams`, { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          const examsList = Array.isArray(data) ? data : data.exams || [];
+          setExams(examsList);
+          generateChartData(examsList);
+        }
+      } catch (e) {
+        // Silent fail
+      }
+    };
+
+    socket.on("new_exam_uploaded", refreshDashboardExams);
+    socket.on("exam_deleted", refreshDashboardExams);
+
+    return () => {
+      socket.off("new_exam_uploaded", refreshDashboardExams);
+      socket.off("exam_deleted", refreshDashboardExams);
+    };
+  }, [socket]);
 
   // Fetch visitor stats when range changes (admin only)
   useEffect(() => {

@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
+import { useSocket } from "../../context/SocketContext";
 import {
   Search,
   BookOpen,
@@ -22,8 +23,9 @@ const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 const BrowseExams = () => {
   // 1. Get the fetcher function from Context
-  const { faculties, courses, fetchExams, loading } = useApp(); 
+  const { faculties, courses, fetchExams, loading } = useApp();
   const { user, userRole } = useAuth();
+  const socket = useSocket();
 
   // 2. Local State for Data (The "Current Page" of results)
   const [exams, setExams] = useState([]);
@@ -77,6 +79,37 @@ const BrowseExams = () => {
 
     return () => clearTimeout(delayDebounce);
   }, [searchTerm, selectedFaculty, selectedCourse, selectedExamType, currentPage]);
+
+  /**
+   * REAL-TIME WEBSOCKET LISTENER:
+   * Auto-refreshes the active view when an exam is uploaded or deleted on ANY client/browser/user
+   */
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleRealtimeUpdate = async () => {
+      const data = await fetchExams({
+        page: currentPage,
+        limit: 6,
+        search: searchTerm,
+        faculty: selectedFaculty,
+        course: selectedCourse,
+        examType: selectedExamType
+      });
+      if (data) {
+        setExams(data.exams || []);
+        setPagination(data.pagination || { totalPages: 1, totalExams: 0 });
+      }
+    };
+
+    socket.on("new_exam_uploaded", handleRealtimeUpdate);
+    socket.on("exam_deleted", handleRealtimeUpdate);
+
+    return () => {
+      socket.off("new_exam_uploaded", handleRealtimeUpdate);
+      socket.off("exam_deleted", handleRealtimeUpdate);
+    };
+  }, [socket, currentPage, searchTerm, selectedFaculty, selectedCourse, selectedExamType]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -220,24 +253,27 @@ const BrowseExams = () => {
       // Determine file path (handle array/single)
       let actualFilePath = exam.filePath;
       try {
-           const parsed = JSON.parse(exam.filePath);
-           if (Array.isArray(parsed) && parsed.length > 0) {
-               actualFilePath = parsed[0];
-           }
+        const parsed = JSON.parse(exam.filePath);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          actualFilePath = parsed[0];
+        }
       } catch (e) {
-          // Not valid JSON, assume single file string
+        // Not valid JSON, assume single file string
       }
 
       // Extract extension dynamically for scalability
       let extension = actualFilePath.split(".").pop().toLowerCase();
-      
+      if (extension.length > 5 || extension.includes("/") || extension.includes("?")) {
+        extension = actualFilePath.includes("/raw/upload/") ? "docx" : "pdf";
+      }
+
       // 🚀 ZIP CHECK: If actualFilePath came from an array of multiple items, it's a zip
       try {
-           const parsed = JSON.parse(exam.filePath);
-           if (Array.isArray(parsed) && parsed.length > 1) {
-               extension = "zip";
-           }
-      } catch (e) {}
+        const parsed = JSON.parse(exam.filePath);
+        if (Array.isArray(parsed) && parsed.length > 1) {
+          extension = "zip";
+        }
+      } catch (e) { }
 
       const fileName = exam.title
         ? `${exam.title}.${extension}`
@@ -263,50 +299,42 @@ const BrowseExams = () => {
         if (response.status === 404)
           throw new Error("File not found on the server.");
         if (response.status === 401)
-            throw new Error("Unauthorized access.");
+          throw new Error("Unauthorized access.");
         throw new Error("Download failed. Please try again.");
       }
 
       // Check content type to distinguish between JSON URL and Blob stream
       const contentType = response.headers.get("content-type");
-      
-      if (contentType && contentType.includes("application/json")) {
-          // Backend returned a JSON with signed URL (Cloudinary ZIP or Single File)
-          const data = await response.json();
-          if (data.downloadUrl) {
-              // 🚀 RELIABLE: Direct Cloudinary Download
-              // Since you enabled PDF/ZIP delivery in Cloudinary settings, 
-              // we can now let the browser handle the download directly.
-              // This shows a native progress bar and is faster for large files.
-              const link = document.createElement("a");
-              link.href = data.downloadUrl;
-              link.setAttribute("download", fileName); 
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              toast.success("Download started!");
 
-              /* 
-              // PREVIOUS 'BLOB MAGIC' LOGIC (Hides URL but is slower for large files)
-              try {
-                  const fileResponse = await fetch(data.downloadUrl);
-                  if (!fileResponse.ok) throw new Error("Failed to fetch file from cloud");
-                  const fileBlob = await fileResponse.blob();
-                  const localObjectUrl = window.URL.createObjectURL(fileBlob);
-                  const link = document.createElement("a");
-                  link.href = localObjectUrl;
-                  link.setAttribute("download", fileName); 
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                  setTimeout(() => window.URL.revokeObjectURL(localObjectUrl), 1000);
-                  toast.success("Download started!");
-              } catch (e) {
-                  // Fallback...
-              }
-              */
-              return;
+      if (contentType && contentType.includes("application/json")) {
+        // Backend returned a JSON with signed URL (Cloudinary ZIP or Single File)
+        const data = await response.json();
+        if (data.downloadUrl) {
+          // 🚀 FORCED DIRECT DOWNLOAD (BLOB CONVERSION)
+          // Browsers block the HTML5 `download` attribute on cross-origin URLs (res.cloudinary.com).
+          // Converting to a local blob: URL guarantees instant direct download to the user's computer.
+          try {
+            const fileResponse = await fetch(data.downloadUrl);
+            if (!fileResponse.ok) throw new Error("Failed to fetch file stream");
+            const fileBlob = await fileResponse.blob();
+            const blobUrl = window.URL.createObjectURL(fileBlob);
+
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 2000);
+            toast.success("Download started!");
+          } catch (fetchErr) {
+            console.warn("Blob fetch fallback:", fetchErr);
+            // Fallback: open URL in new tab if CORS blocks fetch
+            window.open(data.downloadUrl, "_blank");
           }
+          return;
+        }
       }
 
       // Fallback: Local file/Blob stream
@@ -314,7 +342,7 @@ const BrowseExams = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      
+
       // Use the filename from the Content-Disposition header if available, otherwise fallback
       // const contentDisposition = response.headers.get('Content-Disposition');
       // Logic removed as fileName is reliably determined frontend-side now.
@@ -324,7 +352,7 @@ const BrowseExams = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
       toast.success("Download started!");
     } catch (error) {
       console.error("Download error:", error);
@@ -359,19 +387,19 @@ const BrowseExams = () => {
       // }
 
       // 🔥 SUCCESS: Instead of refreshExams, we re-run the local fetcher
-    // This calls the API again with your current page/filters
-    const data = await fetchExams({
-      page: currentPage,
-      limit: 6,
-      search: searchTerm,
-      faculty: selectedFaculty,
-      course: selectedCourse,
-      examType: selectedExamType
-    });
+      // This calls the API again with your current page/filters
+      const data = await fetchExams({
+        page: currentPage,
+        limit: 6,
+        search: searchTerm,
+        faculty: selectedFaculty,
+        course: selectedCourse,
+        examType: selectedExamType
+      });
 
-    // Update the local state with the fresh data
-    setExams(data.exams);
-    setPagination(data.pagination);
+      // Update the local state with the fresh data
+      setExams(data.exams);
+      setPagination(data.pagination);
 
       setResultModal({
         open: true,
@@ -419,13 +447,20 @@ const BrowseExams = () => {
   };
 
   const getFileType = (filename) => {
-    if (isMultiImage(filename)) {
-      return "multi-image";
-    }
-    const ext = filename.split(".").pop().toLowerCase();
-    if (["pdf"].includes(ext)) return "pdf";
-    if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return "image";
-    if (["doc", "docx"].includes(ext)) return "document";
+    if (!filename) return "unknown";
+    if (isMultiImage(filename)) return "multi-image";
+
+    const cleanPath = filename.split("?")[0];
+    const ext = cleanPath.split(".").pop().toLowerCase();
+
+    if (ext === "pdf" || cleanPath.endsWith(".pdf")) return "pdf";
+    if (["doc", "docx"].includes(ext) || cleanPath.endsWith(".doc") || cleanPath.endsWith(".docx")) return "document";
+    if (["jpg", "jpeg", "png", "gif", "webp", "heic", "heif"].includes(ext)) return "image";
+
+    // Fallback: raw Cloudinary uploads are documents/PDFs, image uploads are images
+    if (filename.includes("/raw/upload/")) return "document";
+    if (filename.includes("/image/upload/")) return "image";
+
     return "unknown";
   };
 
@@ -560,19 +595,19 @@ const BrowseExams = () => {
             selectedFaculty !== "All Faculties" ||
             selectedCourse !== "All Courses" ||
             selectedExamType !== "All Types") && (
-            <button
-              onClick={clearFilters}
-              className="text-sm text-[#008767] hover:underline font-bold transition self-start sm:self-auto">
-              Clear all filters
-            </button>
-          )}
+              <button
+                onClick={clearFilters}
+                className="text-sm text-[#008767] hover:underline font-bold transition self-start sm:self-auto">
+                Clear all filters
+              </button>
+            )}
         </div>
 
         {/* Exam List - Motion Removed for rendering */}
         <div className="grid grid-cols-1 gap-6">
           {isDataLoading ? (
             <div className="py-20 text-center">
-                <div className="inline-block w-8 h-8 border-4 border-[#008767] border-t-transparent rounded-full animate-spin"></div>
+              <div className="inline-block w-8 h-8 border-4 border-[#008767] border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : exams.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center">
@@ -596,13 +631,12 @@ const BrowseExams = () => {
                         {exam.title}
                       </h3>
                       <span
-                        className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest ${
-                          exam.examType === "Final"
-                            ? "bg-red-50 text-red-600 border border-red-100"
-                            : exam.examType === "Mid-Term"
-                              ? "bg-blue-50 text-blue-600 border border-blue-100"
-                              : "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                        }`}>
+                        className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest ${exam.examType === "Final"
+                          ? "bg-red-50 text-red-600 border border-red-100"
+                          : exam.examType === "Mid-Term"
+                            ? "bg-blue-50 text-blue-600 border border-blue-100"
+                            : "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                          }`}>
                         {exam.examType}
                       </span>
                     </div>
@@ -685,11 +719,10 @@ const BrowseExams = () => {
                   <button
                     key={page}
                     onClick={() => goToPage(page)}
-                    className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${
-                      currentPage === page
-                        ? "bg-[#008767] text-white shadow-lg shadow-emerald-900/20"
-                        : "text-slate-600 hover:bg-white hover:shadow-sm"
-                    }`}>
+                    className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${currentPage === page
+                      ? "bg-[#008767] text-white shadow-lg shadow-emerald-900/20"
+                      : "text-slate-600 hover:bg-white hover:shadow-sm"
+                      }`}>
                     {page}
                   </button>
                 ),
@@ -782,6 +815,26 @@ const BrowseExams = () => {
                     />
                   ))}
                 </div>
+              ) : getFileType(previewExam.filePath) === "document" ? (
+                <div className="w-full h-full flex flex-col">
+                  <iframe
+                    src={`https://docs.google.com/gview?url=${encodeURIComponent(getFileUrl(previewExam.filePath))}&embedded=true`}
+                    title={previewExam.title}
+                    className="flex-1 w-full border-0 min-h-[70vh]"
+                  />
+                  <div className="bg-slate-900 p-3 flex items-center justify-between text-white text-xs px-6">
+                    <span className="text-slate-400">📄 Microsoft Word Document (.docx / .doc)</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload(previewExam);
+                      }}
+                      className="px-4 py-1.5 bg-[#008767] text-white rounded-lg font-bold hover:bg-[#006d53] transition flex items-center gap-1.5">
+                      <Download size={14} />
+                      Download Word File
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-full">
                   <img
@@ -833,11 +886,10 @@ const BrowseExams = () => {
         width={400}>
         <div className="py-6 text-center">
           <div
-            className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${
-              resultModal.success
-                ? "bg-emerald-100 text-emerald-600"
-                : "bg-red-100 text-red-600"
-            }`}>
+            className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${resultModal.success
+              ? "bg-emerald-100 text-emerald-600"
+              : "bg-red-100 text-red-600"
+              }`}>
             {resultModal.success ? <BookOpen size={32} /> : <X size={32} />}
           </div>
           <h3 className="text-xl font-bold text-slate-900 mb-2">

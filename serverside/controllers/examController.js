@@ -157,6 +157,15 @@ export const deleteExam = async (req, res, next) => {
       }
     }
 
+    // Broadcast real-time WebSocket delete event to all connected clients
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("exam_deleted", {
+        examId: parseInt(id),
+        message: "An exam was deleted.",
+      });
+    }
+
     res.json({ message: "Exam deleted successfully" });
   } catch (err) {
     console.error("Delete error:", err);
@@ -254,6 +263,20 @@ export const uploadExam = async (req, res, next) => {
       );
 
       console.log("✅ Exam inserted successfully:", result.insertId);
+
+      // Broadcast real-time WebSocket event to all connected clients
+      const io = req.app.get("io");
+      if (io) {
+        io.emit("new_exam_uploaded", {
+          message: `New exam uploaded: ${title} (${course})`,
+          examId: result.insertId,
+          title,
+          course,
+          faculty,
+          examType,
+          createdAt: new Date(),
+        });
+      }
 
       res.status(201).json({
         message: "Exam uploaded successfully",
@@ -394,13 +417,19 @@ export const downloadExam = async (req, res, next) => {
             res.json({ downloadUrl: zipUrl });
         } else {
             // 📦 SINGLE FILE DOWNLOAD
+            // Detect actual resource_type from the stored Cloudinary URL
+            // /raw/upload/ = PDF, DOC, DOCX (uploaded via resource_type:auto)
+            // /image/upload/ = JPG, PNG, HEIC, etc.
+            const isRawFile = filePaths[0].includes("/raw/upload/");
+            const resourceType = isRawFile ? "raw" : "image";
+
             let ext = filePaths[0].split(".").pop().toLowerCase();
             if (ext === 'heic' || ext === 'heif') ext = 'jpg';
 
             const signedUrl = cloudinary.url(publicIds[0], {
-                resource_type: 'image',
-                format: ext,
-                flags: "attachment", // Force download now that it's allowed
+                resource_type: resourceType,  // ← was always 'image' — caused double-URL for raw files
+                format: isRawFile ? undefined : ext, // raw files keep their original format
+                flags: "attachment",
                 sign_url: true,
                 type: "upload",
                 secure: true,

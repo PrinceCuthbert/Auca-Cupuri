@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import { AppProvider } from "./context/AppContext";
+import { SocketProvider } from "./context/SocketContext";
 import "react-toastify/dist/ReactToastify.css";
 import "antd/dist/reset.css";
 
@@ -10,7 +11,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthProvider>
       <AppProvider>
-        <App />
+        <SocketProvider>
+          <App />
+        </SocketProvider>
       </AppProvider>
     </AuthProvider>
   </React.StrictMode>

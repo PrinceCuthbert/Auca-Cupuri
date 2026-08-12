@@ -1,4 +1,6 @@
 import express from "express";
+import http from "http";
+import { Server } from "socket.io";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
@@ -19,6 +21,7 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config();
 const app = express();
+const server = http.createServer(app);
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, "uploads");
@@ -27,10 +30,31 @@ if (!fs.existsSync(uploadsDir)) {
   console.log("📁 Created uploads directory");
 }
 
-//} Get allowed origins from environment or use defaults
+// Get allowed origins from environment or use defaults
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
-  : ["http://localhost:5173", "http://localhost:5174","https://cupuri-portal.vercel.app"];
+  : ["http://localhost:5173", "http://localhost:5174", "https://cupuri-portal.vercel.app"];
+
+// Initialize Socket.io with CORS
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+
+// Attach io to app so controllers can emit events via req.app.get("io")
+app.set("io", io);
+
+// Socket connection listener
+io.on("connection", (socket) => {
+  console.log(`⚡ WebSocket client connected: ${socket.id}`);
+
+  socket.on("disconnect", () => {
+    console.log(`❌ WebSocket client disconnected: ${socket.id}`);
+  });
+});
 
 // Middlewares
 app.use(
@@ -39,7 +63,6 @@ app.use(
     credentials: true, // Allow credentials (cookies)
   })
 );
-
 
 app.use(cookieParser()); // Parse cookies
 app.use(express.json());
@@ -91,9 +114,8 @@ app.use("/api/visits", visitRoutes);
 app.use(errorHandler);
 
 // Trust any proxy each time the app starts
-
 app.set("trust proxy", 1);
 
-// Start server
+// Start server using HTTP server instance (supports WebSockets)
 const PORT = process.env.PORT || 3009;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Server running with WebSockets on port ${PORT}`));

@@ -30,3 +30,6 @@ Thumbs.db
 # Uploads (if you want to keep them out of git)
 # serverside/uploads/*
 # !serverside/uploads/.gitkeep
+
+
+.env
